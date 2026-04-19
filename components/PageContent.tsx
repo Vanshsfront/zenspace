@@ -9,7 +9,7 @@ const FALLBACK = "https://images.unsplash.com/photo-1565058379802-bbe93b2f703a?w
 
 const STAGGER_CHILD = {
   hidden: { opacity: 0, y: 30 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] } },
+  show: { opacity: 1, y: 0, transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] as const } },
 };
 
 const STAGGER_CONTAINER = {
