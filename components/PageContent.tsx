@@ -2,10 +2,24 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, Star } from "lucide-react";
+import { ArrowRight, Star, MessageCircle, Sparkles, Baby, Gem, Heart, ShieldCheck, Smile, UserCircle2 } from "lucide-react";
 import { motion } from "framer-motion";
+import { Marquee } from "@/components/Marquee";
 
-const FALLBACK = "https://images.unsplash.com/photo-1565058379802-bbe93b2f703a?w=800";
+const WHATSAPP_DIGITS = "917208388209";
+const WHATSAPP_HREF = `https://wa.me/${WHATSAPP_DIGITS}?text=${encodeURIComponent("Hi Zenspace, I'd like to book a consultation.")}`;
+
+const LOCAL_TATTOOS = [
+  "/assets/photos/tattoo-1.jpeg",
+  "/assets/photos/tattoo-2.jpeg",
+  "/assets/photos/tattoo-3.jpeg",
+  "/assets/photos/tattoo-4.jpeg",
+  "/assets/photos/tattoo-5.jpeg",
+  "/assets/photos/tattoo-6.jpeg",
+  "/assets/photos/tattoo-7.jpeg",
+];
+const LOCAL_STUDIO = "/assets/photos/studio-1.png";
+const pickLocal = (i: number) => LOCAL_TATTOOS[((i % LOCAL_TATTOOS.length) + LOCAL_TATTOOS.length) % LOCAL_TATTOOS.length];
 
 const STAGGER_CHILD = {
   hidden: { opacity: 0, y: 30 },
@@ -32,7 +46,7 @@ export function PageContent({ settings, artists, categories, studio, reviews }: 
             {settings?.hero_description ||
               "A consultation-led process built around anatomy, symbolism and long term aesthetics."}
           </motion.p>
-          <motion.div variants={STAGGER_CHILD} className="mt-8">
+          <motion.div variants={STAGGER_CHILD} className="mt-8 flex flex-wrap items-center gap-3">
             <Link
               href="/contact"
               className="group relative inline-flex items-center gap-3 px-8 py-4 rounded-full bg-stone-900 text-stone-100 overflow-hidden transition-all hover:shadow-[0_0_40px_rgba(0,0,0,0.3)] hover:scale-105"
@@ -41,6 +55,14 @@ export function PageContent({ settings, artists, categories, studio, reviews }: 
               <ArrowRight size={18} className="relative z-10 group-hover:translate-x-1 transition-transform" />
               <div className="absolute inset-0 bg-gradient-to-r from-stone-800 to-stone-600 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
             </Link>
+            <a
+              href={WHATSAPP_HREF}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-7 py-4 rounded-full bg-[#25D366] text-white font-medium shadow-md hover:shadow-[0_0_40px_rgba(37,211,102,0.45)] hover:scale-105 transition-all"
+            >
+              <MessageCircle size={18} /> WhatsApp us
+            </a>
           </motion.div>
         </motion.div>
 
@@ -52,40 +74,186 @@ export function PageContent({ settings, artists, categories, studio, reviews }: 
           className="relative h-[420px] md:h-[560px] rounded-[2.5rem] overflow-hidden shadow-2xl"
         >
           <Image
-            src={settings?.hero_image || FALLBACK}
+            src={settings?.hero_image || pickLocal(0)}
             alt="Featured tattoo"
             fill
             className="object-cover"
             priority
+            sizes="(min-width: 768px) 50vw, 100vw"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent mix-blend-overlay" />
         </motion.div>
       </section>
 
-      {/* Studio photos */}
-      <section className="max-w-7xl mx-auto px-6 py-16">
+      {/* Studio photos — marquee */}
+      <section className="py-16">
         <motion.h2
           initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }}
           className="font-serif text-3xl md:text-4xl mb-12 text-center"
         >
           A place where we create your story
         </motion.h2>
+        {(() => {
+          const items: { id: string; src: string; alt: string }[] = studio.length > 0
+            ? studio.map((s: any) => ({ id: s.id, src: s.photo, alt: s.caption || "studio" }))
+            : [
+                { id: "f-studio", src: LOCAL_STUDIO, alt: "Inside Zenspace" },
+                ...LOCAL_TATTOOS.slice(0, 4).map((src, i) => ({ id: `f-${i}`, src, alt: "Tattoo" })),
+              ];
+          return (
+            <Marquee durationSec={60}>
+              {items.map((s) => (
+                <div
+                  key={s.id}
+                  className="relative w-[320px] aspect-[4/5] rounded-[2rem] overflow-hidden shadow-lg shrink-0"
+                >
+                  <Image src={s.src} alt={s.alt} fill className="object-cover" sizes="320px" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 hover:opacity-100 transition-opacity duration-500" />
+                </div>
+              ))}
+            </Marquee>
+          );
+        })()}
+      </section>
+
+      {/* Piercing — choose your experience */}
+      <section className="max-w-7xl mx-auto px-6 py-24 relative">
         <motion.div
-          variants={STAGGER_CONTAINER} initial="hidden" whileInView="show" viewport={{ once: true }}
-          className="grid md:grid-cols-3 gap-6"
+          initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }}
+          className="text-center mb-14"
         >
-          {(studio.length ? studio : Array.from({ length: 3 }).map((_, i) => ({ id: String(i), photo: FALLBACK, caption: "" }))).slice(0, 3).map((s: any) => (
-            <motion.div
-              key={s.id}
-              variants={STAGGER_CHILD}
-              whileHover={{ y: -10, scale: 1.03 }}
-              className="relative aspect-[4/5] rounded-[2rem] overflow-hidden shadow-lg"
-            >
-              <Image src={s.photo} alt={s.caption || "studio"} fill className="object-cover transition-transform duration-700 hover:scale-110" />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 hover:opacity-100 transition-opacity duration-500" />
-            </motion.div>
-          ))}
+          <h2 className="font-serif text-3xl md:text-5xl tracking-tight text-stone-900">
+            Choose Your{" "}
+            <span className="bg-gradient-to-r from-pink-500 to-fuchsia-500 bg-clip-text text-transparent font-bold">
+              Piercing
+            </span>{" "}
+            Experience
+          </h2>
+          <p className="mt-3 text-stone-500 md:text-lg">Safe, hygienic & painless piercing for every age</p>
+          <div className="mx-auto mt-4 h-[3px] w-16 rounded-full bg-gradient-to-r from-pink-400 to-fuchsia-500" />
         </motion.div>
+
+        <div className="grid md:grid-cols-2 gap-6 md:gap-10">
+          {/* Little Stars (children) */}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }}
+            className="relative rounded-[2.25rem] p-8 md:p-10 border border-pink-200/70 bg-gradient-to-br from-pink-50/95 via-white to-rose-50/90 shadow-[0_10px_40px_rgba(244,114,182,0.10)] overflow-hidden"
+          >
+            <div className="absolute -top-12 -right-10 w-48 h-48 rounded-full bg-pink-200/40 blur-3xl pointer-events-none" />
+            <div className="text-center relative">
+              <div className="inline-flex items-center gap-2 text-pink-500 font-medium">
+                <Sparkles size={18} />
+                <span className="text-xl md:text-2xl font-serif">For Little Stars</span>
+              </div>
+              <p className="mt-1 text-sm text-stone-500">Perfect & safe piercing for children</p>
+            </div>
+
+            <div className="relative mx-auto mt-6 mb-8 w-[78%] aspect-square rounded-full overflow-hidden ring-1 ring-pink-200/70 shadow-md bg-pink-100">
+              <Image
+                src="/assets/photos/tattoo-7.jpeg"
+                alt="Piercing for children"
+                fill
+                className="object-cover"
+                sizes="(min-width: 768px) 30vw, 80vw"
+              />
+            </div>
+
+            <ul className="grid grid-cols-3 gap-2 bg-white/90 rounded-2xl p-4 border border-pink-100">
+              {[
+                { Icon: Baby, t: "Expert Child Care" },
+                { Icon: ShieldCheck, t: "Safe & Hygienic" },
+                { Icon: Smile, t: "Painless Experience" },
+              ].map(({ Icon, t }) => (
+                <li key={t} className="flex flex-col items-center text-center gap-1.5">
+                  <span className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-pink-100 text-pink-500"><Icon size={16} /></span>
+                  <span className="text-[11px] md:text-xs text-stone-600 leading-tight">{t}</span>
+                </li>
+              ))}
+            </ul>
+
+            <div className="mt-6 flex gap-3 justify-center">
+              <a
+                href={WHATSAPP_HREF}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-gradient-to-r from-pink-500 to-rose-500 text-white text-sm font-medium shadow hover:shadow-lg hover:scale-105 transition-all"
+              >
+                Book Now <ArrowRight size={14} />
+              </a>
+              <Link
+                href="/piercing"
+                prefetch
+                className="inline-flex items-center px-6 py-2.5 rounded-full border border-pink-300 text-pink-600 text-sm font-medium hover:bg-pink-50 transition-all"
+              >
+                Know More
+              </Link>
+            </div>
+          </motion.div>
+
+          {/* For Every You (adults) */}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6, delay: 0.1 }}
+            className="relative rounded-[2.25rem] p-8 md:p-10 border border-violet-200/70 bg-gradient-to-br from-violet-50/95 via-white to-fuchsia-50/90 shadow-[0_10px_40px_rgba(167,139,250,0.10)] overflow-hidden"
+          >
+            <div className="absolute -top-12 -left-10 w-48 h-48 rounded-full bg-violet-200/40 blur-3xl pointer-events-none" />
+            <div className="text-center relative">
+              <div className="inline-flex items-center gap-2 text-violet-500 font-medium">
+                <UserCircle2 size={18} />
+                <span className="text-xl md:text-2xl font-serif">For Every You</span>
+              </div>
+              <p className="mt-1 text-sm text-stone-500">Trendy & stylish piercing for adults</p>
+            </div>
+
+            <div className="relative mx-auto mt-6 mb-8 w-[78%] aspect-square rounded-full overflow-hidden ring-1 ring-violet-200/70 shadow-md bg-violet-100">
+              <Image
+                src="/assets/photos/tattoo-4.jpeg"
+                alt="Piercing for adults"
+                fill
+                className="object-cover"
+                sizes="(min-width: 768px) 30vw, 80vw"
+              />
+            </div>
+
+            <ul className="grid grid-cols-3 gap-2 bg-white/90 rounded-2xl p-4 border border-violet-100">
+              {[
+                { Icon: Sparkles, t: "Trendy Designs" },
+                { Icon: UserCircle2, t: "Expert Piercers" },
+                { Icon: Gem, t: "Premium Experience" },
+              ].map(({ Icon, t }) => (
+                <li key={t} className="flex flex-col items-center text-center gap-1.5">
+                  <span className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-violet-100 text-violet-500"><Icon size={16} /></span>
+                  <span className="text-[11px] md:text-xs text-stone-600 leading-tight">{t}</span>
+                </li>
+              ))}
+            </ul>
+
+            <div className="mt-6 flex gap-3 justify-center">
+              <a
+                href={WHATSAPP_HREF}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white text-sm font-medium shadow hover:shadow-lg hover:scale-105 transition-all"
+              >
+                Book Now <ArrowRight size={14} />
+              </a>
+              <Link
+                href="/piercing"
+                prefetch
+                className="inline-flex items-center px-6 py-2.5 rounded-full border border-violet-300 text-violet-600 text-sm font-medium hover:bg-violet-50 transition-all"
+              >
+                Know More
+              </Link>
+            </div>
+          </motion.div>
+        </div>
+
+        {/* Trust strip */}
+        <div className="mt-8 rounded-2xl bg-gradient-to-r from-pink-50 via-white to-violet-50 border border-pink-100/70 px-6 py-4 flex flex-wrap items-center justify-around gap-3 text-xs md:text-sm text-stone-600">
+          <span className="inline-flex items-center gap-2"><ShieldCheck size={14} className="text-pink-500" /> 100% Safe & Hygienic</span>
+          <span className="inline-flex items-center gap-2"><UserCircle2 size={14} className="text-violet-500" /> Certified Piercers</span>
+          <span className="inline-flex items-center gap-2"><Gem size={14} className="text-pink-500" /> Premium Quality</span>
+          <span className="inline-flex items-center gap-2"><Heart size={14} className="text-violet-500" /> Trusted by 10K+ Clients</span>
+        </div>
       </section>
 
       {/* Artists */}
@@ -97,70 +265,89 @@ export function PageContent({ settings, artists, categories, studio, reviews }: 
         >
           Meet our artists
         </motion.h2>
-        <motion.div
-          variants={STAGGER_CONTAINER} initial="hidden" whileInView="show" viewport={{ once: true }}
-          className="grid md:grid-cols-3 gap-10"
-        >
-          {(artists?.length ? artists : [
-            { id: "avinash-kumar", name: "Avinash Kumar", role: "Tattoo Artist", photo: FALLBACK, portfolio_url: "/our-artist/avinash-kumar" },
-            { id: "suren", name: "Suren", role: "Founder & Tattoo Artist", photo: FALLBACK, portfolio_url: "/our-artist/suren" },
-            { id: "artist-3", name: "Guest Artist", role: "Resident Artist", photo: FALLBACK, portfolio_url: "#" },
-          ]).slice(0, 3).map((a: any) => (
-            <motion.div
-              key={a.id}
-              variants={STAGGER_CHILD}
-              className="text-center group"
-            >
-              <motion.div
-                whileHover={{ scale: 1.05, rotate: -2 }}
-                className="relative aspect-[3/4] rounded-[2rem] overflow-hidden mb-6 shadow-xl"
-              >
-                <Image src={a.photo || FALLBACK} alt={a.name} fill className="object-cover transition-transform duration-700 group-hover:scale-110" />
-                <div className="absolute inset-0 bg-stone-900/10 group-hover:bg-transparent transition-colors duration-500" />
-              </motion.div>
-              <h3 className="font-serif text-2xl group-hover:premium-gradient-text transition-all duration-300">{a.name}</h3>
-              {a.role && <p className="text-sm text-stone-500 mb-4 font-medium uppercase tracking-widest mt-1">{a.role}</p>}
-              <Link href={a.portfolio_url || "/our-artist"} className="inline-block px-6 py-2.5 rounded-full border border-stone-300 text-sm hover:bg-stone-900 hover:border-stone-900 hover:text-stone-50 transition-all duration-300">
-                Portfolio
-              </Link>
-            </motion.div>
-          ))}
-        </motion.div>
-      </section>
-
-      {/* Categories */}
-      <section className="max-w-7xl mx-auto px-6 py-20 bg-stone-100/50 rounded-[3rem] my-10 backdrop-blur-sm border border-stone-200/50">
-        <motion.h2
-          initial={{ opacity: 0, scale: 0.95 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} transition={{ duration: 0.6 }}
-          className="font-serif text-3xl md:text-4xl mb-12 text-center"
-        >
-          Our Categories
-        </motion.h2>
-        <motion.div
-          variants={STAGGER_CONTAINER} initial="hidden" whileInView="show" viewport={{ once: true }}
-          className="grid grid-cols-2 md:grid-cols-3 gap-6"
-        >
-          {(categories.length ? categories : ["Realistic", "Small", "Religious", "Portrait", "Piercing", "Cover Up"].map((n, i) => ({ id: String(i), name: n, photo: FALLBACK })))
-            .slice(0, 6)
-            .map((c: any) => (
-              <Link key={c.id} href="/category">
-                <motion.div
-                  variants={STAGGER_CHILD}
-                  whileHover={{ scale: 1.05, y: -10 }}
-                  className="group relative aspect-square rounded-[2rem] overflow-hidden shadow-md hover:shadow-2xl transition-all duration-300"
-                >
-                  <Image src={c.photo || FALLBACK} alt={c.name} fill className="object-cover group-hover:scale-110 transition-transform duration-700" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-stone-900/90 via-stone-900/40 to-transparent opacity-80 group-hover:opacity-100 transition-opacity duration-500" />
-                  <span className="absolute bottom-6 left-6 text-stone-50 font-serif text-2xl group-hover:translate-x-2 transition-transform duration-300">{c.name}</span>
+        {artists?.length ? (
+          <motion.div
+            variants={STAGGER_CONTAINER} initial="hidden" whileInView="show" viewport={{ once: true }}
+            className="grid md:grid-cols-3 gap-10"
+          >
+            {artists.slice(0, 3).map((a: any) => {
+              const href = a.slug ? `/our-artist/${a.slug}` : (a.portfolio_url || "/our-artist");
+              return (
+                <motion.div key={a.id} variants={STAGGER_CHILD} className="text-center group">
+                  <motion.div
+                    whileHover={{ scale: 1.05, rotate: -2 }}
+                    className="relative aspect-[3/4] rounded-[2rem] overflow-hidden mb-6 shadow-xl bg-stone-200"
+                  >
+                    <Image
+                      src={a.photo || pickLocal(artists.indexOf(a))}
+                      alt={a.name}
+                      fill
+                      className="object-cover transition-transform duration-700 group-hover:scale-110"
+                      sizes="(min-width: 768px) 33vw, 100vw"
+                    />
+                    <div className="absolute inset-0 bg-stone-900/10 group-hover:bg-transparent transition-colors duration-500" />
+                  </motion.div>
+                  <h3 className="font-serif text-2xl group-hover:premium-gradient-text transition-all duration-300">{a.name}</h3>
+                  {a.role && <p className="text-sm text-stone-500 mb-4 font-medium uppercase tracking-widest mt-1">{a.role}</p>}
+                  <Link href={href} prefetch className="inline-block px-6 py-2.5 rounded-full border border-stone-300 text-sm hover:bg-stone-900 hover:border-stone-900 hover:text-stone-50 transition-all duration-300">
+                    Portfolio
+                  </Link>
                 </motion.div>
-              </Link>
-            ))}
-        </motion.div>
+              );
+            })}
+          </motion.div>
+        ) : (
+          <p className="text-center text-stone-500 italic">Our artist line-up will appear here soon.</p>
+        )}
       </section>
 
-      {/* Reviews */}
-      <section className="max-w-7xl mx-auto px-6 py-20">
-        <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }}>
+      {/* Categories — stable grid (intentionally non-animated so the section never jitters) */}
+      <section className="py-20 bg-stone-100/50 my-10 backdrop-blur-sm border-y border-stone-200/50">
+        <div className="max-w-7xl mx-auto px-6">
+          <h2 className="font-serif text-3xl md:text-4xl mb-12 text-center">Our Categories</h2>
+          {categories.length === 0 ? (
+            <p className="text-center text-stone-500 italic">Categories coming soon.</p>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5 md:gap-6">
+              {categories.map((c: any, i: number) => (
+                <Link
+                  key={c.id}
+                  href={c.slug ? `/category/${c.slug}` : "/category"}
+                  prefetch
+                  className="group relative block aspect-square rounded-[1.75rem] overflow-hidden shadow-md hover:shadow-2xl transition-shadow duration-300 bg-stone-300"
+                >
+                  <Image
+                    src={c.photo || pickLocal(i + 2)}
+                    alt={c.name}
+                    fill
+                    className="object-cover transition-transform duration-700 group-hover:scale-105"
+                    sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-stone-900/85 via-stone-900/30 to-transparent" />
+                  <span className="absolute bottom-5 left-5 right-5 text-stone-50 font-serif text-xl md:text-2xl">
+                    {c.name}
+                  </span>
+                </Link>
+              ))}
+            </div>
+          )}
+          {categories.length > 0 && (
+            <div className="text-center mt-10">
+              <Link
+                href="/category"
+                prefetch
+                className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full border border-stone-300 text-sm font-medium hover:bg-stone-900 hover:text-stone-50 hover:border-stone-900 transition-colors"
+              >
+                Browse all categories
+              </Link>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* Reviews — marquee */}
+      <section className="py-20">
+        <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }} className="max-w-7xl mx-auto px-6">
           <h2 className="font-serif text-3xl md:text-4xl mb-4 text-center">
             Rated highly by <span className="premium-gradient-text font-bold">250+</span> clients
           </h2>
@@ -173,34 +360,31 @@ export function PageContent({ settings, artists, categories, studio, reviews }: 
           </div>
         </motion.div>
 
-        <motion.div
-          variants={STAGGER_CONTAINER} initial="hidden" whileInView="show" viewport={{ once: true }}
-          className="grid md:grid-cols-3 gap-8"
-        >
-          {(reviews.length ? reviews : [1, 2, 3].map((i) => ({ id: String(i), client_name: "Happy Client", photo: FALLBACK, review: "Incredible experience from consultation to final piece. The team really listens and executes flawlessly.", rating: 5 })))
-            .slice(0, 3)
-            .map((r: any) => (
-              <motion.div
+        {reviews.length === 0 ? (
+          <p className="text-center text-stone-500 italic">First reviews on the way.</p>
+        ) : (
+          <Marquee durationSec={70}>
+            {reviews.map((r: any) => (
+              <div
                 key={r.id}
-                variants={STAGGER_CHILD}
-                whileHover={{ y: -8, scale: 1.02 }}
-                className="bg-white/80 backdrop-blur-xl p-8 rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-stone-100"
+                className="bg-white/80 backdrop-blur-xl p-8 rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-stone-100 w-[380px] shrink-0"
               >
                 <div className="flex items-center gap-5 mb-6">
-                  <div className="relative w-16 h-16 rounded-full overflow-hidden border-2 border-stone-100 shadow-sm">
-                    <Image src={r.photo || FALLBACK} alt={r.client_name} fill className="object-cover" />
+                  <div className="relative w-16 h-16 rounded-full overflow-hidden border-2 border-stone-100 shadow-sm bg-stone-200 shrink-0">
+                    <Image src={r.photo || pickLocal(reviews.indexOf(r) + 4)} alt={r.client_name} fill className="object-cover" sizes="64px" />
                   </div>
                   <div>
                     <p className="font-serif text-lg text-stone-900">{r.client_name}</p>
                     <div className="flex gap-1 mt-1">
-                      {Array.from({ length: r.rating }).map((_, i) => <Star key={i} size={14} className="fill-stone-700 text-stone-700" />)}
+                      {Array.from({ length: r.rating || 5 }).map((_, i) => <Star key={i} size={14} className="fill-stone-700 text-stone-700" />)}
                     </div>
                   </div>
                 </div>
-                <p className="text-stone-600 leading-relaxed italic">"{r.review}"</p>
-              </motion.div>
+                <p className="text-stone-600 leading-relaxed italic line-clamp-5">"{r.review}"</p>
+              </div>
             ))}
-        </motion.div>
+          </Marquee>
+        )}
       </section>
 
       {/* Process */}

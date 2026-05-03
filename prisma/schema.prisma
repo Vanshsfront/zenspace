@@ -1,0 +1,109 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model SiteSettings {
+  id                  Int     @id @default(1)
+  hero_title          String? @default("We help you choose the right tattoo")
+  hero_subtitle       String? @default("Not just any tattoo.")
+  hero_description    String? @default("A consultation-led process built around anatomy, symbolism and long term aesthetics.")
+  hero_image          String?
+  cta_title           String? @default("Zenspace — Where your story becomes timeless art")
+  cta_subtitle        String? @default("Custom tattoos crafted with passion, precision and meaning.")
+  address             String? @default("Shop No. 101, 1st Floor, Zenspace Art and Tattoo, Akruti Commercial Complex, MIDC Central Rd, Near Akruti Centre Point, Gautam Nagar, Chakala Industrial Area (MIDC), Andheri East, Mumbai, Maharashtra 400093")
+  email               String? @default("zenspace32@gmail.com")
+  phone               String? @default("+91 7208388209 / +91 8652144521")
+  whatsapp            String?
+  instagram           String?
+  facebook            String?
+  pinterest           String?
+  piercing_title      String?
+  piercing_intro      String?
+  piercing_baby_blurb String?
+
+  @@map("site_settings")
+}
+
+model Artist {
+  id            String          @id @default(uuid()) @db.Uuid
+  name          String
+  slug          String?         @unique
+  role          String?
+  photo         String?
+  portfolio_url String?
+  experience    String?
+  specialty     String?
+  bio           String?
+  sort_order    Int?            @default(0)
+  created_at    DateTime?       @default(now()) @db.Timestamptz(6)
+  portfolio     PortfolioItem[]
+
+  @@map("artists")
+}
+
+model Category {
+  id          String          @id @default(uuid()) @db.Uuid
+  name        String
+  slug        String?         @unique
+  photo       String?
+  description String?
+  sort_order  Int?            @default(0)
+  photos      CategoryPhoto[]
+
+  @@map("categories")
+}
+
+model CategoryPhoto {
+  id          String    @id @default(uuid()) @db.Uuid
+  category_id String?   @db.Uuid
+  photo       String
+  caption     String?
+  sort_order  Int?      @default(0)
+  category    Category? @relation(fields: [category_id], references: [id], onDelete: Cascade)
+
+  @@map("category_photos")
+}
+
+model StudioPhoto {
+  id         String  @id @default(uuid()) @db.Uuid
+  photo      String
+  caption    String?
+  sort_order Int?    @default(0)
+
+  @@map("studio_photos")
+}
+
+model PiercingPhoto {
+  id         String  @id @default(uuid()) @db.Uuid
+  photo      String
+  caption    String?
+  sort_order Int?    @default(0)
+
+  @@map("piercing_photos")
+}
+
+model Review {
+  id          String  @id @default(uuid()) @db.Uuid
+  client_name String
+  photo       String
+  review      String?
+  rating      Int?    @default(5)
+  sort_order  Int?    @default(0)
+
+  @@map("reviews")
+}
+
+model PortfolioItem {
+  id         String  @id @default(uuid()) @db.Uuid
+  artist_id  String? @db.Uuid
+  photo      String
+  title      String?
+  sort_order Int?    @default(0)
+  artist     Artist? @relation(fields: [artist_id], references: [id], onDelete: Cascade)
+
+  @@map("portfolio_items")
+}

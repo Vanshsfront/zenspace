@@ -8,13 +8,25 @@
   --color-accent: #52525b; /* sleek zinc accent replacing the brown */
 }
 
-html, body { background: #fafaf9; color: #0a0a0a; }
+html, body { background: #ffffff; color: #0a0a0a; }
 
 .bg-paper-texture {
+  background-color: #ffffff;
+  position: relative;
+  isolation: isolate;
+}
+/* The watercolor sits behind everything, gaussian-blurred so the splotches melt
+   into a soft purple wash instead of distinct shapes. */
+.bg-paper-texture::before {
+  content: "";
+  position: fixed;
+  inset: -8%;
   background-image: url('/assets/bg.png');
   background-size: cover;
   background-position: center;
-  background-attachment: fixed;
+  filter: blur(48px);
+  z-index: -1;
+  pointer-events: none;
 }
 
 .fade-up { animation: fadeUp 0.8s ease-out both; }
@@ -31,4 +43,19 @@ html, body { background: #fafaf9; color: #0a0a0a; }
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
+}
+
+/* Continuously-scrolling marquee. Pair with <Marquee> which renders children twice
+   so the -50% translate creates a seamless loop. Hover pauses; reduced-motion stops. */
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+.marquee-track {
+  animation: marquee var(--marquee-duration, 50s) linear infinite;
+  will-change: transform;
+}
+.marquee-track:hover { animation-play-state: paused; }
+@media (prefers-reduced-motion: reduce) {
+  .marquee-track { animation: none; }
 }

@@ -7,27 +7,49 @@ type Settings = Record<string, any>;
 export default function SiteSettingsAdmin() {
   const [s, setS] = useState<Settings | null>(null);
   const [msg, setMsg] = useState("");
-  useEffect(() => { fetch("/api/admin/site_settings").then(r => r.json()).then(d => setS(d[0] || { id: 1 })); }, []);
-  if (!s) return <p>Loading…</p>;
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const r = await fetch("/api/admin/site_settings", { cache: "no-store" });
+        if (cancelled) return;
+        const d = r.ok ? await r.json() : [];
+        setS(Array.isArray(d) ? d[0] || { id: 1 } : d || { id: 1 });
+      } catch {
+        if (!cancelled) setS({ id: 1 });
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (!s) return <p className="text-stone-500">Loading…</p>;
 
   async function save() {
     const r = await fetch("/api/admin/site_settings", { method: "PATCH", body: JSON.stringify(s) });
     setMsg(r.ok ? "Saved" : "Error");
     setTimeout(() => setMsg(""), 2000);
   }
-  const field = (k: string, label: string, type: "text" | "textarea" = "text") => (
+
+  const field = (k: string, label: string, type: "text" | "textarea" = "text", help?: string) => (
     <label key={k} className="block">
       <span className="text-sm font-medium">{label}</span>
+      {help && <span className="block text-xs text-stone-500 mb-1">{help}</span>}
       {type === "textarea" ? (
-        <textarea value={s[k] || ""} onChange={(e) => setS({ ...s, [k]: e.target.value })} rows={3} className="w-full mt-1 px-3 py-2 rounded border bg-white" />
+        <textarea value={s[k] ?? ""} onChange={(e) => setS({ ...s, [k]: e.target.value })} rows={3} className="w-full mt-1 px-3 py-2 rounded-lg border bg-white" />
       ) : (
-        <input value={s[k] || ""} onChange={(e) => setS({ ...s, [k]: e.target.value })} className="w-full mt-1 px-3 py-2 rounded border bg-white" />
+        <input value={s[k] ?? ""} onChange={(e) => setS({ ...s, [k]: e.target.value })} className="w-full mt-1 px-3 py-2 rounded-lg border bg-white" />
       )}
     </label>
   );
+
   return (
     <div className="max-w-3xl space-y-5">
       <h1 className="font-serif text-3xl">Site settings</h1>
+
+      <h2 className="font-serif text-xl text-stone-700 pt-4">Hero & home</h2>
       {field("hero_title", "Hero title")}
       {field("hero_subtitle", "Hero subtitle")}
       {field("hero_description", "Hero description", "textarea")}
@@ -37,15 +59,28 @@ export default function SiteSettingsAdmin() {
       </div>
       {field("cta_title", "Closing CTA title")}
       {field("cta_subtitle", "Closing CTA subtitle", "textarea")}
-      <hr />
+
+      <hr className="my-2" />
+      <h2 className="font-serif text-xl text-stone-700">Contact</h2>
       {field("address", "Address", "textarea")}
       {field("email", "Email")}
       {field("phone", "Phone")}
+      {field("whatsapp", "WhatsApp number", "text", "Use international format with country code, no '+', spaces or dashes. e.g., 917208388209")}
+
+      <hr className="my-2" />
+      <h2 className="font-serif text-xl text-stone-700">Piercing page copy</h2>
+      {field("piercing_title", "Page title")}
+      {field("piercing_intro", "Intro paragraph", "textarea")}
+      {field("piercing_baby_blurb", "Baby piercings blurb", "textarea")}
+
+      <hr className="my-2" />
+      <h2 className="font-serif text-xl text-stone-700">Social</h2>
       {field("instagram", "Instagram URL")}
       {field("facebook", "Facebook URL")}
       {field("pinterest", "Pinterest URL")}
+
       <div className="flex items-center gap-3 pt-4">
-        <button onClick={save} className="px-6 py-2.5 rounded-full bg-[#1a1613] text-white">Save</button>
+        <button onClick={save} className="px-6 py-2.5 rounded-full bg-stone-900 text-white hover:bg-stone-800">Save</button>
         {msg && <span className="text-sm text-green-700">{msg}</span>}
       </div>
     </div>

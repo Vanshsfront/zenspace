@@ -32,15 +32,21 @@ export function ArtistProfileContent({ name, role, experience, specialty, bio, p
       <div className="max-w-7xl mx-auto">
         <div className="grid md:grid-cols-12 gap-12 md:gap-20 items-center mb-32">
           {/* Left: Photo */}
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, x: -30 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8 }}
             className="md:col-span-5 relative"
           >
             <div className="absolute -inset-4 bg-gradient-to-tr from-stone-300 to-transparent rounded-[3rem] blur-2xl opacity-50 -z-10" />
-            <div className="relative aspect-[3/4] rounded-[2rem] overflow-hidden shadow-2xl">
-              <Image src={photo} alt={name} fill className="object-cover" priority />
+            <div className="relative aspect-[3/4] rounded-[2rem] overflow-hidden shadow-2xl bg-stone-200">
+              {photo ? (
+                <Image src={photo} alt={name} fill className="object-cover" priority sizes="(min-width: 768px) 40vw, 100vw" />
+              ) : (
+                <div className="absolute inset-0 bg-gradient-to-br from-stone-300 to-stone-500 flex items-center justify-center">
+                  <span className="font-serif text-stone-50 text-3xl px-6 text-center">{name}</span>
+                </div>
+              )}
             </div>
           </motion.div>
 
@@ -76,19 +82,23 @@ export function ArtistProfileContent({ name, role, experience, specialty, bio, p
           variants={STAGGER_CONTAINER}
         >
           <motion.h2 variants={STAGGER_CHILD} className="font-serif text-4xl text-stone-900 mb-10 text-center">Selected Works</motion.h2>
-          <div className="grid md:grid-cols-3 gap-8">
-            {works.map((workUrl, i) => (
-              <motion.div 
-                key={i} 
-                variants={STAGGER_CHILD}
-                whileHover={{ y: -10, scale: 1.02 }}
-                className="relative aspect-[4/5] rounded-[2rem] overflow-hidden shadow-lg group"
-              >
-                <Image src={workUrl} alt={`Work ${i + 1} by ${name}`} fill className="object-cover transition-transform duration-700 group-hover:scale-110" />
-                <div className="absolute inset-0 bg-stone-900/10 group-hover:bg-transparent transition-colors duration-500" />
-              </motion.div>
-            ))}
-          </div>
+          {works.length === 0 ? (
+            <p className="text-center text-stone-500 italic">Portfolio coming soon.</p>
+          ) : (
+            <div className="grid md:grid-cols-3 gap-8">
+              {works.map((workUrl, i) => (
+                <motion.div
+                  key={i}
+                  variants={STAGGER_CHILD}
+                  whileHover={{ y: -10, scale: 1.02 }}
+                  className="relative aspect-[4/5] rounded-[2rem] overflow-hidden shadow-lg group"
+                >
+                  <Image src={workUrl} alt={`Work ${i + 1} by ${name}`} fill className="object-cover transition-transform duration-700 group-hover:scale-110" sizes="(min-width: 768px) 33vw, 100vw" />
+                  <div className="absolute inset-0 bg-stone-900/10 group-hover:bg-transparent transition-colors duration-500" />
+                </motion.div>
+              ))}
+            </div>
+          )}
         </motion.div>
       </div>
     </div>

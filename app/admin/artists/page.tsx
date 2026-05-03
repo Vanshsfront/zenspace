@@ -1,10 +1,27 @@
-import { CrudList } from "../CrudList";
+import { EntityList } from "../_components/EntityList";
+
+type Artist = {
+  id: string;
+  name: string;
+  slug: string | null;
+  role: string | null;
+  photo: string | null;
+  specialty: string | null;
+  sort_order: number | null;
+};
+
 export default function Page() {
-  return <CrudList table="artists" title="Artists" fields={[
-    { key: "name", label: "Name" },
-    { key: "role", label: "Role / Specialty" },
-    { key: "photo", label: "Photo", type: "image" },
-    { key: "portfolio_url", label: "Portfolio URL" },
-    { key: "sort_order", label: "Sort order", type: "number" },
-  ]} />;
+  return (
+    <EntityList<Artist>
+      table="artists"
+      title="Artists"
+      basePath="/admin/artists"
+      columns={[
+        { key: "photo", label: "Photo", image: true },
+        { key: "name", label: "Name" },
+        { key: "slug", label: "Slug" },
+        { key: "specialty", label: "Specialty" },
+      ]}
+    />
+  );
 }

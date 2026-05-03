@@ -1,53 +1,227 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { createServiceClient } from "@/lib/supabase/server";
+import { revalidateTag, revalidatePath } from "next/cache";
+import { prisma } from "@/lib/prisma";
+import { TAGS } from "@/lib/data";
 
-const ALLOWED = new Set(["site_settings", "artists", "categories", "studio_photos", "reviews", "portfolio_items"]);
+const TABLE_TAGS: Record<string, string> = {
+  site_settings: TAGS.settings,
+  artists: TAGS.artists,
+  categories: TAGS.categories,
+  category_photos: TAGS.categories,
+  studio_photos: TAGS.studio,
+  piercing_photos: TAGS.piercing,
+  reviews: TAGS.reviews,
+  portfolio_items: TAGS.artists,
+};
+
+function bust(table: string) {
+  const tag = TABLE_TAGS[table];
+  // expire: 0 — admin wants immediate read-your-own-writes after edits
+  if (tag) revalidateTag(tag, { expire: 0 });
+  // Also revalidate paths so the [slug] dynamic routes & list pages re-render
+  // for visitors immediately (without this, freshly added categories/artists
+  // would only appear after the unstable_cache revalidate window).
+  if (table === "categories") {
+    revalidatePath("/category");
+    revalidatePath("/category/[slug]", "page");
+    revalidatePath("/", "layout");
+  }
+  if (table === "artists") {
+    revalidatePath("/our-artist");
+    revalidatePath("/our-artist/[slug]", "page");
+    revalidatePath("/", "layout");
+  }
+  if (table === "category_photos") {
+    revalidatePath("/category/[slug]", "page");
+  }
+  if (table === "portfolio_items") {
+    revalidatePath("/our-artist/[slug]", "page");
+  }
+  if (table === "studio_photos" || table === "reviews" || table === "site_settings") {
+    revalidatePath("/", "layout");
+  }
+  if (table === "piercing_photos") {
+    revalidatePath("/piercing");
+  }
+}
+
+type ModelKey =
+  | "site_settings"
+  | "artists"
+  | "categories"
+  | "category_photos"
+  | "studio_photos"
+  | "piercing_photos"
+  | "reviews"
+  | "portfolio_items";
+
+const MODELS: Record<ModelKey, { delegate: keyof typeof prisma; orderBy: any }> = {
+  site_settings:    { delegate: "siteSettings",   orderBy: { id: "asc" } },
+  artists:          { delegate: "artist",         orderBy: [{ sort_order: "asc" }, { name: "asc" }] },
+  categories:       { delegate: "category",       orderBy: [{ sort_order: "asc" }, { name: "asc" }] },
+  category_photos:  { delegate: "categoryPhoto",  orderBy: { sort_order: "asc" } },
+  studio_photos:    { delegate: "studioPhoto",    orderBy: { sort_order: "asc" } },
+  piercing_photos:  { delegate: "piercingPhoto",  orderBy: { sort_order: "asc" } },
+  reviews:          { delegate: "review",         orderBy: { sort_order: "asc" } },
+  portfolio_items:  { delegate: "portfolioItem",  orderBy: { sort_order: "asc" } },
+};
+
+function isModelKey(t: string): t is ModelKey {
+  return Object.prototype.hasOwnProperty.call(MODELS, t);
+}
 
 async function guard() {
   const c = await cookies();
   return c.get("admin")?.value === "1";
 }
 
-export async function GET(_: Request, ctx: { params: Promise<{ table: string }> }) {
+function model(table: ModelKey) {
+  return (prisma as any)[MODELS[table].delegate];
+}
+
+function slugify(s: string): string {
+  return s
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 80);
+}
+
+// Strip blank strings to null so unique columns (slug) don't collide on "".
+function normalizeBody(table: ModelKey, body: Record<string, any>): Record<string, any> {
+  const out: Record<string, any> = { ...body };
+  for (const k of Object.keys(out)) {
+    if (typeof out[k] === "string" && out[k].trim() === "") out[k] = null;
+  }
+  // Auto-derive a slug from name when the admin didn't provide one — both for
+  // create and patch. Ensures /category/[slug] and /our-artist/[slug] resolve.
+  if ((table === "categories" || table === "artists") && !out.slug && typeof out.name === "string") {
+    out.slug = slugify(out.name);
+  }
+  return out;
+}
+
+// site_settings is a single row — clients PATCH it without an id and we coerce
+function normalizeSettingsBody(body: any) {
+  const { id: _id, ...rest } = body;
+  return rest;
+}
+
+function searchFilter(table: ModelKey, q: string): any {
+  const fields: Record<ModelKey, string[]> = {
+    site_settings: [],
+    artists: ["name", "role", "specialty"],
+    categories: ["name", "slug"],
+    category_photos: ["caption"],
+    studio_photos: ["caption"],
+    piercing_photos: ["caption"],
+    reviews: ["client_name", "review"],
+    portfolio_items: ["title"],
+  };
+  const cols = fields[table];
+  if (!cols.length) return undefined;
+  return { OR: cols.map((c) => ({ [c]: { contains: q, mode: "insensitive" } })) };
+}
+
+function friendlyError(table: ModelKey, e: any): string {
+  // Prisma unique-constraint violation
+  if (e?.code === "P2002") {
+    const field = Array.isArray(e?.meta?.target) ? e.meta.target.join(", ") : (e?.meta?.target || "value");
+    if (String(field).includes("slug")) {
+      return `A ${table === "categories" ? "category" : "record"} with that slug already exists. Pick another slug.`;
+    }
+    return `Duplicate ${field}.`;
+  }
+  return e?.message || "Request failed";
+}
+
+export async function GET(req: Request, ctx: { params: Promise<{ table: string }> }) {
   if (!(await guard())) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const { table } = await ctx.params;
-  if (!ALLOWED.has(table)) return NextResponse.json({ error: "bad table" }, { status: 400 });
-  const sb = createServiceClient();
-  const { data, error } = await sb.from(table).select("*").order(table === "site_settings" ? "id" : "sort_order");
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json(data);
+  if (!isModelKey(table)) return NextResponse.json({ error: "bad table" }, { status: 400 });
+
+  const url = new URL(req.url);
+  const q = url.searchParams.get("q")?.trim();
+  const where = q ? searchFilter(table, q) : undefined;
+
+  try {
+    const data = await model(table).findMany({ where, orderBy: MODELS[table].orderBy });
+    return NextResponse.json(data);
+  } catch (e: any) {
+    return NextResponse.json({ error: friendlyError(table, e) }, { status: 500 });
+  }
 }
 
 export async function POST(req: Request, ctx: { params: Promise<{ table: string }> }) {
   if (!(await guard())) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const { table } = await ctx.params;
-  if (!ALLOWED.has(table)) return NextResponse.json({ error: "bad table" }, { status: 400 });
+  if (!isModelKey(table)) return NextResponse.json({ error: "bad table" }, { status: 400 });
   const body = await req.json();
-  const sb = createServiceClient();
-  const { data, error } = await sb.from(table).insert(body).select().single();
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json(data);
+
+  try {
+    if (table === "site_settings") {
+      // Upsert the singleton row.
+      const data = normalizeSettingsBody(body);
+      const row = await prisma.siteSettings.upsert({
+        where: { id: 1 },
+        create: { id: 1, ...data },
+        update: data,
+      });
+      bust(table);
+      return NextResponse.json(row);
+    }
+    const data = normalizeBody(table, body);
+    const row = await model(table).create({ data });
+    bust(table);
+    return NextResponse.json(row);
+  } catch (e: any) {
+    return NextResponse.json({ error: friendlyError(table, e) }, { status: 400 });
+  }
 }
 
 export async function PATCH(req: Request, ctx: { params: Promise<{ table: string }> }) {
   if (!(await guard())) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const { table } = await ctx.params;
-  if (!ALLOWED.has(table)) return NextResponse.json({ error: "bad table" }, { status: 400 });
-  const { id, ...patch } = await req.json();
-  const sb = createServiceClient();
-  const { data, error } = await sb.from(table).update(patch).eq("id", id).select().single();
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json(data);
+  if (!isModelKey(table)) return NextResponse.json({ error: "bad table" }, { status: 400 });
+  const body = await req.json();
+
+  try {
+    if (table === "site_settings") {
+      const data = normalizeSettingsBody(body);
+      const row = await prisma.siteSettings.upsert({
+        where: { id: 1 },
+        create: { id: 1, ...data },
+        update: data,
+      });
+      bust(table);
+      return NextResponse.json(row);
+    }
+    const { id, ...patch } = body;
+    if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
+    const data = normalizeBody(table, patch);
+    const row = await model(table).update({ where: { id }, data });
+    bust(table);
+    return NextResponse.json(row);
+  } catch (e: any) {
+    return NextResponse.json({ error: friendlyError(table, e) }, { status: 400 });
+  }
 }
 
 export async function DELETE(req: Request, ctx: { params: Promise<{ table: string }> }) {
   if (!(await guard())) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const { table } = await ctx.params;
-  if (!ALLOWED.has(table)) return NextResponse.json({ error: "bad table" }, { status: 400 });
+  if (!isModelKey(table)) return NextResponse.json({ error: "bad table" }, { status: 400 });
+
   const { id } = await req.json();
-  const sb = createServiceClient();
-  const { error } = await sb.from(table).delete().eq("id", id);
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ ok: true });
+  if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
+
+  try {
+    await model(table).delete({ where: { id } });
+    bust(table);
+    return NextResponse.json({ ok: true });
+  } catch (e: any) {
+    return NextResponse.json({ error: friendlyError(table, e) }, { status: 400 });
+  }
 }
