@@ -8,9 +8,7 @@ import { Menu, X, ExternalLink, LogOut } from "lucide-react";
 const NAV = [
   { href: "/admin", label: "Site settings", exact: true },
   { href: "/admin/artists", label: "Artists" },
-  { href: "/admin/portfolios", label: "Artist portfolios" },
   { href: "/admin/categories", label: "Categories" },
-  { href: "/admin/category-photos", label: "Category photos" },
   { href: "/admin/studio", label: "Studio photos" },
   { href: "/admin/piercing", label: "Piercing photos" },
   { href: "/admin/reviews", label: "Reviews" },

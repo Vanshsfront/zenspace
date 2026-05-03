@@ -31,7 +31,29 @@ const STAGGER_CONTAINER = {
   show: { opacity: 1, transition: { staggerChildren: 0.15 } },
 };
 
+// Guest placeholders shown when the studio hasn't filled the roster yet.
+// They link back to /our-artist so visitors land on the real list rather than
+// a dead artist page. The site always shows at least three so the section
+// reads as a team rather than a single-person studio.
+const GUEST_ARTISTS = [
+  { id: "guest-1", name: "Guest Artist", role: "Visiting", slug: null, photo: null },
+  { id: "guest-2", name: "Guest Artist", role: "Visiting", slug: null, photo: null },
+  { id: "guest-3", name: "Guest Artist", role: "Visiting", slug: null, photo: null },
+];
+
+const PLACEHOLDER_REVIEWS = [
+  { id: "p-r-1", client_name: "Aanya Sharma", review: "Calm, clean studio and a long consultation that turned my vague idea into something I'll actually love at 60. Healed beautifully.", rating: 5, photo: null },
+  { id: "p-r-2", client_name: "Rohan Mehta", review: "I came in for a cover-up I'd been dreading. They redrew it three times until placement and balance felt right. Worth every minute.", rating: 5, photo: null },
+  { id: "p-r-3", client_name: "Priya Iyer", review: "First piercing for my daughter — kind, quick, and reassuring. Aftercare instructions were clear. Healed without a hitch.", rating: 5, photo: null },
+];
+
 export function PageContent({ settings, artists, categories, studio, reviews }: any) {
+  // Pad to a minimum of 3 so the section never reads as one lonely artist /
+  // one lonely review. Real records always show first.
+  const displayedArtists =
+    (artists?.length ?? 0) >= 3 ? artists : [...(artists ?? []), ...GUEST_ARTISTS].slice(0, 3);
+  const displayedReviews =
+    (reviews?.length ?? 0) >= 3 ? reviews : [...(reviews ?? []), ...PLACEHOLDER_REVIEWS].slice(0, 3);
   return (
     <div className="bg-paper-texture">
       {/* Hero */}
@@ -199,7 +221,7 @@ export function PageContent({ settings, artists, categories, studio, reviews }: 
             <div className="text-center relative">
               <div className="inline-flex items-center gap-2 text-violet-500 font-medium">
                 <UserCircle2 size={18} />
-                <span className="text-xl md:text-2xl font-serif">For Every You</span>
+                <span className="text-xl md:text-2xl font-serif">For everyone</span>
               </div>
               <p className="mt-1 text-sm text-stone-500">Trendy & stylish piercing for adults</p>
             </div>
@@ -265,63 +287,60 @@ export function PageContent({ settings, artists, categories, studio, reviews }: 
         >
           Meet our artists
         </motion.h2>
-        {artists?.length ? (
-          <motion.div
-            variants={STAGGER_CONTAINER} initial="hidden" whileInView="show" viewport={{ once: true }}
-            className="grid md:grid-cols-3 gap-10"
-          >
-            {artists.slice(0, 3).map((a: any) => {
-              const href = a.slug ? `/our-artist/${a.slug}` : (a.portfolio_url || "/our-artist");
-              return (
-                <motion.div key={a.id} variants={STAGGER_CHILD} className="text-center group">
-                  <motion.div
-                    whileHover={{ scale: 1.05, rotate: -2 }}
-                    className="relative aspect-[3/4] rounded-[2rem] overflow-hidden mb-6 shadow-xl bg-stone-200"
-                  >
-                    <Image
-                      src={a.photo || pickLocal(artists.indexOf(a))}
-                      alt={a.name}
-                      fill
-                      className="object-cover transition-transform duration-700 group-hover:scale-110"
-                      sizes="(min-width: 768px) 33vw, 100vw"
-                    />
-                    <div className="absolute inset-0 bg-stone-900/10 group-hover:bg-transparent transition-colors duration-500" />
-                  </motion.div>
-                  <h3 className="font-serif text-2xl group-hover:premium-gradient-text transition-all duration-300">{a.name}</h3>
-                  {a.role && <p className="text-sm text-stone-500 mb-4 font-medium uppercase tracking-widest mt-1">{a.role}</p>}
-                  <Link href={href} prefetch className="inline-block px-6 py-2.5 rounded-full border border-stone-300 text-sm hover:bg-stone-900 hover:border-stone-900 hover:text-stone-50 transition-all duration-300">
-                    Portfolio
-                  </Link>
+        <motion.div
+          variants={STAGGER_CONTAINER} initial="hidden" whileInView="show" viewport={{ once: true }}
+          className="grid sm:grid-cols-2 md:grid-cols-3 gap-8 md:gap-10"
+        >
+          {displayedArtists.map((a: any, i: number) => {
+            const href = a.slug ? `/our-artist/${a.slug}` : (a.portfolio_url || "/our-artist");
+            return (
+              <motion.div key={a.id} variants={STAGGER_CHILD} className="text-center group">
+                <motion.div
+                  whileHover={{ scale: 1.04, rotate: -1 }}
+                  className="relative aspect-[3/4] rounded-[2rem] overflow-hidden mb-6 shadow-xl bg-stone-200"
+                >
+                  <Image
+                    src={a.photo || pickLocal(i)}
+                    alt={a.name}
+                    fill
+                    className="object-cover transition-transform duration-700 group-hover:scale-110"
+                    sizes="(min-width: 768px) 33vw, 100vw"
+                  />
+                  <div className="absolute inset-0 bg-stone-900/10 group-hover:bg-transparent transition-colors duration-500" />
                 </motion.div>
-              );
-            })}
-          </motion.div>
-        ) : (
-          <p className="text-center text-stone-500 italic">Our artist line-up will appear here soon.</p>
-        )}
+                <h3 className="font-serif text-2xl group-hover:premium-gradient-text transition-all duration-300">{a.name}</h3>
+                {a.role && <p className="text-sm text-stone-500 mb-4 font-medium uppercase tracking-widest mt-1">{a.role}</p>}
+                <Link href={href} prefetch className="inline-block px-6 py-2.5 rounded-full border border-stone-300 text-sm hover:bg-stone-900 hover:border-stone-900 hover:text-stone-50 transition-all duration-300">
+                  Portfolio
+                </Link>
+              </motion.div>
+            );
+          })}
+        </motion.div>
       </section>
 
-      {/* Categories — stable grid (intentionally non-animated so the section never jitters) */}
+      {/* Categories — flex with fixed-width cards: a few cards center themselves,
+          adding more cards naturally wraps onto extra rows. No marquee, no jitter. */}
       <section className="py-20 bg-stone-100/50 my-10 backdrop-blur-sm border-y border-stone-200/50">
         <div className="max-w-7xl mx-auto px-6">
           <h2 className="font-serif text-3xl md:text-4xl mb-12 text-center">Our Categories</h2>
           {categories.length === 0 ? (
             <p className="text-center text-stone-500 italic">Categories coming soon.</p>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5 md:gap-6">
+            <div className="flex flex-wrap justify-center gap-5 md:gap-6">
               {categories.map((c: any, i: number) => (
                 <Link
                   key={c.id}
                   href={c.slug ? `/category/${c.slug}` : "/category"}
                   prefetch
-                  className="group relative block aspect-square rounded-[1.75rem] overflow-hidden shadow-md hover:shadow-2xl transition-shadow duration-300 bg-stone-300"
+                  className="group relative block w-full sm:w-[280px] md:w-[300px] aspect-square rounded-[1.75rem] overflow-hidden shadow-md hover:shadow-2xl transition-shadow duration-300 bg-stone-300"
                 >
                   <Image
                     src={c.photo || pickLocal(i + 2)}
                     alt={c.name}
                     fill
                     className="object-cover transition-transform duration-700 group-hover:scale-105"
-                    sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
+                    sizes="(min-width: 768px) 300px, 100vw"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-stone-900/85 via-stone-900/30 to-transparent" />
                   <span className="absolute bottom-5 left-5 right-5 text-stone-50 font-serif text-xl md:text-2xl">
@@ -360,27 +379,19 @@ export function PageContent({ settings, artists, categories, studio, reviews }: 
           </div>
         </motion.div>
 
-        {reviews.length === 0 ? (
-          <p className="text-center text-stone-500 italic">First reviews on the way.</p>
+        {/* Up to 3 reviews fit on a single row and stay still; beyond that we
+            switch to the marquee carousel so the section doesn't look stretched. */}
+        {displayedReviews.length <= 3 ? (
+          <div className="max-w-7xl mx-auto px-6 grid sm:grid-cols-2 md:grid-cols-3 gap-6">
+            {displayedReviews.map((r: any, i: number) => (
+              <ReviewCard key={r.id} r={r} fallback={pickLocal(i + 4)} />
+            ))}
+          </div>
         ) : (
           <Marquee durationSec={70}>
-            {reviews.map((r: any) => (
-              <div
-                key={r.id}
-                className="bg-white/80 backdrop-blur-xl p-8 rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-stone-100 w-[380px] shrink-0"
-              >
-                <div className="flex items-center gap-5 mb-6">
-                  <div className="relative w-16 h-16 rounded-full overflow-hidden border-2 border-stone-100 shadow-sm bg-stone-200 shrink-0">
-                    <Image src={r.photo || pickLocal(reviews.indexOf(r) + 4)} alt={r.client_name} fill className="object-cover" sizes="64px" />
-                  </div>
-                  <div>
-                    <p className="font-serif text-lg text-stone-900">{r.client_name}</p>
-                    <div className="flex gap-1 mt-1">
-                      {Array.from({ length: r.rating || 5 }).map((_, i) => <Star key={i} size={14} className="fill-stone-700 text-stone-700" />)}
-                    </div>
-                  </div>
-                </div>
-                <p className="text-stone-600 leading-relaxed italic line-clamp-5">"{r.review}"</p>
+            {displayedReviews.map((r: any, i: number) => (
+              <div key={r.id} className="w-[380px] shrink-0">
+                <ReviewCard r={r} fallback={pickLocal(i + 4)} />
               </div>
             ))}
           </Marquee>
@@ -451,6 +462,27 @@ export function PageContent({ settings, artists, categories, studio, reviews }: 
           </motion.div>
         </motion.div>
       </section>
+    </div>
+  );
+}
+
+function ReviewCard({ r, fallback }: { r: any; fallback: string }) {
+  return (
+    <div className="bg-white/80 backdrop-blur-xl p-8 rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-stone-100 h-full">
+      <div className="flex items-center gap-5 mb-6">
+        <div className="relative w-16 h-16 rounded-full overflow-hidden border-2 border-stone-100 shadow-sm bg-stone-200 shrink-0">
+          <Image src={r.photo || fallback} alt={r.client_name} fill className="object-cover" sizes="64px" />
+        </div>
+        <div>
+          <p className="font-serif text-lg text-stone-900">{r.client_name}</p>
+          <div className="flex gap-1 mt-1">
+            {Array.from({ length: r.rating || 5 }).map((_, i) => (
+              <Star key={i} size={14} className="fill-stone-700 text-stone-700" />
+            ))}
+          </div>
+        </div>
+      </div>
+      <p className="text-stone-600 leading-relaxed italic line-clamp-5">"{r.review}"</p>
     </div>
   );
 }

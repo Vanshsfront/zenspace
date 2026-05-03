@@ -2,10 +2,30 @@
 
 import Image from "next/image";
 import { motion } from "framer-motion";
-import type { SiteSettings } from "@/lib/data";
+import type { SiteSettings, StudioPhoto } from "@/lib/data";
 
-export function AboutContent({ settings }: { settings: SiteSettings | null }) {
-  const heroImage = settings?.hero_image;
+const FALLBACK_STUDIO_PHOTOS = [
+  "/assets/photos/studio-1.png",
+  "/assets/photos/tattoo-1.jpeg",
+  "/assets/photos/tattoo-2.jpeg",
+  "/assets/photos/tattoo-3.jpeg",
+];
+
+export function AboutContent({
+  settings,
+  studio,
+}: {
+  settings: SiteSettings | null;
+  studio: StudioPhoto[];
+}) {
+  // Use real studio uploads when available; otherwise fall back to the bundled
+  // studio/tattoo shots so the layout never reads as empty.
+  const photos: { id: string; src: string; caption: string | null }[] =
+    studio.length > 0
+      ? studio.map((s) => ({ id: s.id, src: s.photo, caption: s.caption }))
+      : FALLBACK_STUDIO_PHOTOS.map((src, i) => ({ id: `fallback-${i}`, src, caption: null }));
+
+  const hero = photos[0];
 
   return (
     <div className="bg-paper-texture min-h-screen pt-32 pb-20 px-6 overflow-hidden">
@@ -26,24 +46,20 @@ export function AboutContent({ settings }: { settings: SiteSettings | null }) {
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 1, delay: 0.2 }}
-          className="relative w-full h-[50vh] md:h-[60vh] rounded-[3rem] overflow-hidden shadow-2xl mb-24 group bg-stone-200"
+          className="relative w-full h-[50vh] md:h-[60vh] rounded-[3rem] overflow-hidden shadow-2xl mb-16 group bg-stone-200"
         >
-          {heroImage ? (
-            <Image
-              src={heroImage}
-              alt="Zenspace Workspace"
-              fill
-              className="object-cover group-hover:scale-105 transition-transform duration-1000"
-            />
-          ) : (
-            <div className="absolute inset-0 bg-gradient-to-br from-stone-200 via-stone-300 to-stone-400 flex items-center justify-center">
-              <span className="font-serif text-stone-600 text-3xl px-12 text-center">Studio photo coming soon</span>
-            </div>
-          )}
+          <Image
+            src={hero.src}
+            alt={hero.caption || "Inside Zenspace studio"}
+            fill
+            className="object-cover group-hover:scale-105 transition-transform duration-1000"
+            sizes="(min-width: 1024px) 1024px, 100vw"
+            priority
+          />
           <div className="absolute inset-0 bg-stone-900/10 mix-blend-overlay" />
         </motion.div>
 
-        <div className="grid md:grid-cols-2 gap-16 md:gap-24 items-center">
+        <div className="grid md:grid-cols-2 gap-12 md:gap-20 items-start mb-20">
           <motion.div
             initial={{ opacity: 0, x: -30 }}
             whileInView={{ opacity: 1, x: 0 }}
@@ -64,28 +80,57 @@ export function AboutContent({ settings }: { settings: SiteSettings | null }) {
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.8 }}
-            className="relative"
+            className="grid grid-cols-2 gap-3 md:gap-4"
           >
-            <div className="absolute -inset-4 bg-gradient-to-tr from-stone-200 to-transparent rounded-[3rem] blur-2xl opacity-60 -z-10" />
-            <motion.div
-              whileHover={{ scale: 1.02, rotate: 1 }}
-              className="relative aspect-[3/4] rounded-[2rem] overflow-hidden shadow-xl bg-stone-200"
-            >
-              {heroImage ? (
+            {photos.slice(1, 5).map((p, i) => (
+              <div
+                key={p.id}
+                className="relative aspect-square rounded-2xl overflow-hidden shadow-md bg-stone-200"
+              >
                 <Image
-                  src={heroImage}
-                  alt="Zenspace founders"
+                  src={p.src}
+                  alt={p.caption || "Studio detail"}
                   fill
-                  className="object-cover transition-transform duration-700"
+                  className="object-cover transition-transform duration-700 hover:scale-105"
+                  sizes="(min-width: 768px) 25vw, 50vw"
                 />
-              ) : (
-                <div className="absolute inset-0 bg-gradient-to-br from-stone-300 to-stone-500 flex items-center justify-center">
-                  <span className="font-serif text-stone-100 text-2xl px-8 text-center">Meet the team</span>
-                </div>
-              )}
-            </motion.div>
+              </div>
+            ))}
           </motion.div>
         </div>
+
+        {photos.length > 1 && (
+          <section>
+            <h2 className="font-serif text-3xl md:text-4xl text-stone-900 mb-8 text-center">
+              Inside the studio
+            </h2>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
+              {photos.map((p) => (
+                <motion.div
+                  key={p.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, margin: "-100px" }}
+                  transition={{ duration: 0.5 }}
+                  className="relative aspect-[4/5] rounded-2xl overflow-hidden shadow-md bg-stone-200 group"
+                >
+                  <Image
+                    src={p.src}
+                    alt={p.caption || "Studio photo"}
+                    fill
+                    className="object-cover transition-transform duration-700 group-hover:scale-105"
+                    sizes="(min-width: 768px) 33vw, 50vw"
+                  />
+                  {p.caption && (
+                    <div className="absolute inset-x-0 bottom-0 px-4 py-3 bg-gradient-to-t from-stone-900/80 to-transparent text-stone-50 text-xs">
+                      {p.caption}
+                    </div>
+                  )}
+                </motion.div>
+              ))}
+            </div>
+          </section>
+        )}
       </div>
     </div>
   );

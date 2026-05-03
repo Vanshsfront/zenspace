@@ -1,9 +1,12 @@
 import { AboutContent } from "@/components/AboutContent";
-import { getSiteSettings } from "@/lib/data";
+import { getSiteSettings, getStudioPhotos } from "@/lib/data";
 
 export const metadata = { title: "About Us — Zenspace" };
 
 export default async function AboutPage() {
-  const settings = await getSiteSettings();
-  return <AboutContent settings={settings} />;
+  const [settings, studio] = await Promise.all([
+    getSiteSettings(),
+    getStudioPhotos(),
+  ]);
+  return <AboutContent settings={settings} studio={studio} />;
 }

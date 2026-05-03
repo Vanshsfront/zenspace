@@ -1,8 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { useToast } from "./Toast";
 import { useConfirm } from "./ConfirmDialog";
 import { ChevronUp, ChevronDown, Plus, Search } from "lucide-react";
@@ -152,9 +151,10 @@ export function EntityList<T extends { id: string; sort_order?: number | null }>
                     const imgCol = columns.find((c) => c.image)!;
                     const v = (row as any)[imgCol.key];
                     return v ? (
-                      <div className="relative w-16 h-16 rounded-lg overflow-hidden bg-stone-100 shrink-0">
-                        <Image src={v} alt="" fill className="object-cover" sizes="64px" />
-                      </div>
+                      // Plain <img> so any uploaded URL renders even if its
+                      // domain isn't whitelisted in next.config images.
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={v} alt="" className="w-16 h-16 rounded-lg object-cover bg-stone-100 shrink-0" />
                     ) : (
                       <div className="w-16 h-16 rounded-lg bg-stone-100 shrink-0" />
                     );
@@ -219,9 +219,8 @@ export function EntityList<T extends { id: string; sort_order?: number | null }>
                         <td key={c.key} className="px-4 py-3 align-middle">
                           {c.image ? (
                             val ? (
-                              <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-stone-100">
-                                <Image src={val} alt="" fill className="object-cover" sizes="48px" />
-                              </div>
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={val} alt="" className="w-12 h-12 rounded-lg object-cover bg-stone-100" />
                             ) : (
                               <span className="text-xs text-stone-400">—</span>
                             )

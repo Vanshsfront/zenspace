@@ -40,8 +40,12 @@ function bust(table: string) {
   }
   if (table === "studio_photos" || table === "reviews" || table === "site_settings") {
     revalidatePath("/", "layout");
+    revalidatePath("/");
   }
-  if (table === "piercing_photos") {
+  if (table === "studio_photos" || table === "site_settings") {
+    revalidatePath("/about");
+  }
+  if (table === "piercing_photos" || table === "site_settings") {
     revalidatePath("/piercing");
   }
 }
