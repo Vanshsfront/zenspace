@@ -77,10 +77,11 @@ async function withTimeout<T>(p: Promise<T>, fallback: T): Promise<T> {
 
 export const getSiteSettings = unstable_cache(
   async (): Promise<SiteSettings | null> => {
-    return withTimeout(
-      prisma.siteSettings.findUnique({ where: { id: 1 } }).then((r) => r as SiteSettings | null).catch(() => null),
-      null,
-    );
+    const p = prisma.siteSettings
+      .findUnique({ where: { id: 1 } })
+      .then((r) => r as SiteSettings | null)
+      .catch(() => null as SiteSettings | null);
+    return withTimeout<SiteSettings | null>(p, null);
   },
   ["site_settings"],
   { tags: [TAGS.settings], revalidate: 3600 }
@@ -97,17 +98,18 @@ export const getArtists = unstable_cache(
   { tags: [TAGS.artists], revalidate: 3600 }
 );
 
+type ArtistWithPortfolio = Artist & { portfolio: PortfolioItem[] };
+
 const _artistBySlug = unstable_cache(
-  async (slug: string) => {
-    return withTimeout(
-      prisma.artist
-        .findFirst({
-          where: { slug },
-          include: { portfolio: { orderBy: { sort_order: "asc" } } },
-        })
-        .catch(() => null),
-      null,
-    );
+  async (slug: string): Promise<ArtistWithPortfolio | null> => {
+    const p = prisma.artist
+      .findFirst({
+        where: { slug },
+        include: { portfolio: { orderBy: { sort_order: "asc" } } },
+      })
+      .then((r) => r as ArtistWithPortfolio | null)
+      .catch(() => null as ArtistWithPortfolio | null);
+    return withTimeout<ArtistWithPortfolio | null>(p, null);
   },
   ["artist_by_slug"],
   { tags: [TAGS.artists], revalidate: 3600 }
@@ -125,17 +127,18 @@ export const getCategories = unstable_cache(
   { tags: [TAGS.categories], revalidate: 3600 }
 );
 
+type CategoryWithPhotos = Category & { photos: CategoryPhoto[] };
+
 const _categoryBySlug = unstable_cache(
-  async (slug: string) => {
-    return withTimeout(
-      prisma.category
-        .findFirst({
-          where: { slug },
-          include: { photos: { orderBy: { sort_order: "asc" } } },
-        })
-        .catch(() => null),
-      null,
-    );
+  async (slug: string): Promise<CategoryWithPhotos | null> => {
+    const p = prisma.category
+      .findFirst({
+        where: { slug },
+        include: { photos: { orderBy: { sort_order: "asc" } } },
+      })
+      .then((r) => r as CategoryWithPhotos | null)
+      .catch(() => null as CategoryWithPhotos | null);
+    return withTimeout<CategoryWithPhotos | null>(p, null);
   },
   ["category_by_slug"],
   { tags: [TAGS.categories], revalidate: 3600 }
