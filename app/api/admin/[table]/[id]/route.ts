@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
 
-const MODELS: Record<string, keyof typeof prisma> = {
+const MODELS: Record<string, string> = {
   site_settings: "siteSettings",
   artists: "artist",
   categories: "category",

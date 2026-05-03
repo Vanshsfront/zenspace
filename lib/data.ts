@@ -55,33 +55,45 @@ export type PiercingPhoto = { id: string; photo: string; caption: string | null 
 export type Review = { id: string; client_name: string; photo: string; review: string | null; rating: number | null };
 export type PortfolioItem = { id: string; artist_id: string | null; photo: string; title: string | null };
 
+export type ArtistWithPortfolio = Artist & { portfolio: PortfolioItem[] };
+export type CategoryWithPhotos = Category & { photos: CategoryPhoto[] };
+
 /**
- * Wrap any DB query so a stuck pgbouncer connection bails out instead of hanging
- * the whole render. With revalidateTag's stale-while-revalidate, an empty fallback
- * is preferable to an infinite-loading page on a flaky cold start.
+ * Race a query against a 5s timeout so a stuck pgbouncer connection bails out
+ * with the fallback instead of hanging the page render. We rely on the
+ * outer revalidateTag call for cache freshness; serving an empty fallback
+ * for one request is preferable to an infinite-loading page.
+ *
+ * The thunk-style API (rather than `Promise<T>`) means timeout cancellation
+ * doesn't fire the pending DB call — it just resolves the race. The DB
+ * call still runs to completion in the background; that's fine.
  */
 const QUERY_TIMEOUT_MS = 5000;
-async function withTimeout<T>(p: Promise<T>, fallback: T): Promise<T> {
+async function withTimeout<T>(run: () => Promise<T>, fallback: T): Promise<T> {
   let timer: ReturnType<typeof setTimeout> | undefined;
-  const t = new Promise<T>((resolve) => {
+  const timeout = new Promise<T>((resolve) => {
     timer = setTimeout(() => resolve(fallback), QUERY_TIMEOUT_MS);
   });
   try {
-    return await Promise.race([p, t]);
-  } catch {
-    return fallback;
+    const result = await Promise.race([run().catch(() => fallback), timeout]);
+    return result;
   } finally {
     if (timer) clearTimeout(timer);
   }
 }
 
+// `prisma as any` keeps this file building cleanly even when `prisma generate`
+// hasn't run yet (e.g. on first Vercel install before the postinstall hook
+// completes). The runtime types are still correct because the Prisma adapter
+// returns the row shape regardless.
+const db = prisma as any;
+
 export const getSiteSettings = unstable_cache(
   async (): Promise<SiteSettings | null> => {
-    const p = prisma.siteSettings
-      .findUnique({ where: { id: 1 } })
-      .then((r) => r as SiteSettings | null)
-      .catch(() => null as SiteSettings | null);
-    return withTimeout<SiteSettings | null>(p, null);
+    return withTimeout<SiteSettings | null>(
+      async () => (await db.siteSettings.findUnique({ where: { id: 1 } })) as SiteSettings | null,
+      null,
+    );
   },
   ["site_settings"],
   { tags: [TAGS.settings], revalidate: 3600 }
@@ -89,27 +101,28 @@ export const getSiteSettings = unstable_cache(
 
 export const getArtists = unstable_cache(
   async (): Promise<Artist[]> => {
-    return withTimeout(
-      prisma.artist.findMany({ orderBy: [{ sort_order: "asc" }, { name: "asc" }] }).then((r) => r as Artist[]).catch(() => [] as Artist[]),
-      [] as Artist[],
+    return withTimeout<Artist[]>(
+      async () =>
+        (await db.artist.findMany({
+          orderBy: [{ sort_order: "asc" }, { name: "asc" }],
+        })) as Artist[],
+      [],
     );
   },
   ["artists"],
   { tags: [TAGS.artists], revalidate: 3600 }
 );
 
-type ArtistWithPortfolio = Artist & { portfolio: PortfolioItem[] };
-
 const _artistBySlug = unstable_cache(
   async (slug: string): Promise<ArtistWithPortfolio | null> => {
-    const p = prisma.artist
-      .findFirst({
-        where: { slug },
-        include: { portfolio: { orderBy: { sort_order: "asc" } } },
-      })
-      .then((r) => r as ArtistWithPortfolio | null)
-      .catch(() => null as ArtistWithPortfolio | null);
-    return withTimeout<ArtistWithPortfolio | null>(p, null);
+    return withTimeout<ArtistWithPortfolio | null>(
+      async () =>
+        (await db.artist.findFirst({
+          where: { slug },
+          include: { portfolio: { orderBy: { sort_order: "asc" } } },
+        })) as ArtistWithPortfolio | null,
+      null,
+    );
   },
   ["artist_by_slug"],
   { tags: [TAGS.artists], revalidate: 3600 }
@@ -118,27 +131,28 @@ export const getArtistBySlug = (slug: string) => _artistBySlug(slug);
 
 export const getCategories = unstable_cache(
   async (): Promise<Category[]> => {
-    return withTimeout(
-      prisma.category.findMany({ orderBy: [{ sort_order: "asc" }, { name: "asc" }] }).then((r) => r as Category[]).catch(() => [] as Category[]),
-      [] as Category[],
+    return withTimeout<Category[]>(
+      async () =>
+        (await db.category.findMany({
+          orderBy: [{ sort_order: "asc" }, { name: "asc" }],
+        })) as Category[],
+      [],
     );
   },
   ["categories"],
   { tags: [TAGS.categories], revalidate: 3600 }
 );
 
-type CategoryWithPhotos = Category & { photos: CategoryPhoto[] };
-
 const _categoryBySlug = unstable_cache(
   async (slug: string): Promise<CategoryWithPhotos | null> => {
-    const p = prisma.category
-      .findFirst({
-        where: { slug },
-        include: { photos: { orderBy: { sort_order: "asc" } } },
-      })
-      .then((r) => r as CategoryWithPhotos | null)
-      .catch(() => null as CategoryWithPhotos | null);
-    return withTimeout<CategoryWithPhotos | null>(p, null);
+    return withTimeout<CategoryWithPhotos | null>(
+      async () =>
+        (await db.category.findFirst({
+          where: { slug },
+          include: { photos: { orderBy: { sort_order: "asc" } } },
+        })) as CategoryWithPhotos | null,
+      null,
+    );
   },
   ["category_by_slug"],
   { tags: [TAGS.categories], revalidate: 3600 }
@@ -147,9 +161,10 @@ export const getCategoryWithPhotos = (slug: string) => _categoryBySlug(slug);
 
 export const getStudioPhotos = unstable_cache(
   async (): Promise<StudioPhoto[]> => {
-    return withTimeout(
-      prisma.studioPhoto.findMany({ orderBy: { sort_order: "asc" } }).then((r) => r as StudioPhoto[]).catch(() => [] as StudioPhoto[]),
-      [] as StudioPhoto[],
+    return withTimeout<StudioPhoto[]>(
+      async () =>
+        (await db.studioPhoto.findMany({ orderBy: { sort_order: "asc" } })) as StudioPhoto[],
+      [],
     );
   },
   ["studio_photos"],
@@ -158,9 +173,10 @@ export const getStudioPhotos = unstable_cache(
 
 export const getPiercingPhotos = unstable_cache(
   async (): Promise<PiercingPhoto[]> => {
-    return withTimeout(
-      prisma.piercingPhoto.findMany({ orderBy: { sort_order: "asc" } }).then((r) => r as PiercingPhoto[]).catch(() => [] as PiercingPhoto[]),
-      [] as PiercingPhoto[],
+    return withTimeout<PiercingPhoto[]>(
+      async () =>
+        (await db.piercingPhoto.findMany({ orderBy: { sort_order: "asc" } })) as PiercingPhoto[],
+      [],
     );
   },
   ["piercing_photos"],
@@ -169,9 +185,10 @@ export const getPiercingPhotos = unstable_cache(
 
 export const getReviews = unstable_cache(
   async (): Promise<Review[]> => {
-    return withTimeout(
-      prisma.review.findMany({ orderBy: { sort_order: "asc" } }).then((r) => r as Review[]).catch(() => [] as Review[]),
-      [] as Review[],
+    return withTimeout<Review[]>(
+      async () =>
+        (await db.review.findMany({ orderBy: { sort_order: "asc" } })) as Review[],
+      [],
     );
   },
   ["reviews"],

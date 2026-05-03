@@ -60,7 +60,7 @@ type ModelKey =
   | "reviews"
   | "portfolio_items";
 
-const MODELS: Record<ModelKey, { delegate: keyof typeof prisma; orderBy: any }> = {
+const MODELS: Record<ModelKey, { delegate: string; orderBy: any }> = {
   site_settings:    { delegate: "siteSettings",   orderBy: { id: "asc" } },
   artists:          { delegate: "artist",         orderBy: [{ sort_order: "asc" }, { name: "asc" }] },
   categories:       { delegate: "category",       orderBy: [{ sort_order: "asc" }, { name: "asc" }] },
@@ -168,7 +168,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ table: string 
     if (table === "site_settings") {
       // Upsert the singleton row.
       const data = normalizeSettingsBody(body);
-      const row = await prisma.siteSettings.upsert({
+      const row = await (prisma as any).siteSettings.upsert({
         where: { id: 1 },
         create: { id: 1, ...data },
         update: data,
@@ -194,7 +194,7 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ table: string
   try {
     if (table === "site_settings") {
       const data = normalizeSettingsBody(body);
-      const row = await prisma.siteSettings.upsert({
+      const row = await (prisma as any).siteSettings.upsert({
         where: { id: 1 },
         create: { id: 1, ...data },
         update: data,
