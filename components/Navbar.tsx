@@ -11,12 +11,12 @@ type NavCategory = { id: string; name: string; slug: string | null };
 export function Navbar({ artists, categories }: { artists: NavArtist[]; categories: NavCategory[] }) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
-  const [openMenu, setOpenMenu] = useState<null | "category" | "artists">(null);
+  const [openMenu, setOpenMenu] = useState<null | "category" | "artists" | "piercing">(null);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => { setOpen(false); setOpenMenu(null); }, [pathname]);
 
-  function hover(menu: "category" | "artists") {
+  function hover(menu: "category" | "artists" | "piercing") {
     if (closeTimer.current) clearTimeout(closeTimer.current);
     setOpenMenu(menu);
   }
@@ -38,7 +38,7 @@ export function Navbar({ artists, categories }: { artists: NavArtist[]; categori
             <div className="w-10 h-10 rounded-full overflow-hidden border border-white/60 shadow-sm group-hover:scale-105 transition-transform">
               <Image src="/assets/logo.jpg" alt="Zenspace" width={40} height={40} className="object-cover w-full h-full" />
             </div>
-            <span className="font-serif text-lg tracking-wide text-stone-900 group-hover:text-stone-600 transition-colors">Zenspace</span>
+            <span className="font-serif font-bold text-lg tracking-wide text-stone-900 group-hover:text-stone-600 transition-colors">Zenspace</span>
           </Link>
 
           <ul className="hidden md:flex items-center gap-1 bg-white/30 backdrop-blur-sm px-2 py-1.5 rounded-full border border-white/40 shadow-sm">
@@ -95,13 +95,28 @@ export function Navbar({ artists, categories }: { artists: NavArtist[]; categori
               )}
             </li>
 
-            <li><Link href="/piercing" prefetch className={linkClass(pathname === "/piercing")}>Piercing</Link></li>
+            <li className="relative" onMouseEnter={() => hover("piercing")} onMouseLeave={leave}>
+              <button
+                onClick={() => setOpenMenu(openMenu === "piercing" ? null : "piercing")}
+                className={`${linkClass(pathname?.startsWith("/piercing") ?? false)} flex items-center gap-1`}
+                aria-haspopup="true"
+                aria-expanded={openMenu === "piercing"}
+              >
+                Piercing <ChevronDown size={14} className={`transition-transform ${openMenu === "piercing" ? "rotate-180" : ""}`} />
+              </button>
+              {openMenu === "piercing" && (
+                <div className="absolute left-1/2 -translate-x-1/2 top-full mt-3 min-w-[200px] rounded-2xl bg-white/95 backdrop-blur-xl border border-white/60 shadow-xl overflow-hidden">
+                  <Link href="/piercing/kids" prefetch className="block px-5 py-3 text-sm hover:bg-stone-100 transition-colors">Kids</Link>
+                  <Link href="/piercing/adults" prefetch className="block px-5 py-3 text-sm hover:bg-stone-100 transition-colors">Adults</Link>
+                </div>
+              )}
+            </li>
             <li><Link href="/about" prefetch className={linkClass(pathname === "/about")}>About Us</Link></li>
             <li><Link href="/contact" prefetch className={linkClass(pathname === "/contact")}>Contact</Link></li>
           </ul>
 
           <Link href="/contact" prefetch className="hidden md:inline-block px-6 py-2 rounded-full bg-stone-900 text-stone-50 text-sm font-medium hover:bg-stone-800 hover:scale-105 transition-all shadow-md">
-            Book consultation
+            Locate us
           </Link>
           <button className="md:hidden text-stone-800 p-2 rounded-full hover:bg-white/50 transition-colors" onClick={() => setOpen(!open)} aria-label="menu">
             {open ? <X size={20} /> : <Menu size={20} />}
@@ -160,13 +175,28 @@ export function Navbar({ artists, categories }: { artists: NavArtist[]; categori
                 )}
               </li>
 
-              <li><Link href="/piercing" prefetch className="flex items-center px-4 py-2.5 rounded-2xl hover:bg-stone-100">Piercing</Link></li>
+              <li>
+                <button
+                  onClick={() => setOpenMenu(openMenu === "piercing" ? null : "piercing")}
+                  className="w-full flex items-center justify-between px-4 py-2.5 rounded-2xl hover:bg-stone-100"
+                  aria-expanded={openMenu === "piercing"}
+                >
+                  <span>Piercing</span>
+                  <ChevronDown size={16} className={`transition-transform ${openMenu === "piercing" ? "rotate-180" : ""}`} />
+                </button>
+                {openMenu === "piercing" && (
+                  <ul className="ml-4 my-1 border-l border-stone-200 pl-3 flex flex-col gap-0.5">
+                    <li><Link href="/piercing/kids" prefetch className="block px-3 py-2 rounded-xl text-sm hover:bg-stone-100">Kids</Link></li>
+                    <li><Link href="/piercing/adults" prefetch className="block px-3 py-2 rounded-xl text-sm hover:bg-stone-100">Adults</Link></li>
+                  </ul>
+                )}
+              </li>
               <li><Link href="/about" prefetch className="flex items-center px-4 py-2.5 rounded-2xl hover:bg-stone-100">About Us</Link></li>
               <li><Link href="/contact" prefetch className="flex items-center px-4 py-2.5 rounded-2xl hover:bg-stone-100">Contact</Link></li>
 
               <li className="pt-2 mt-1 border-t border-stone-200/70">
                 <Link href="/contact" prefetch className="block text-center px-4 py-2.5 rounded-2xl bg-stone-900 text-stone-50 text-sm font-medium">
-                  Book consultation
+                  Locate us
                 </Link>
               </li>
             </ul>

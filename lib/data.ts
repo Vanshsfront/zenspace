@@ -15,6 +15,9 @@ export const TAGS = {
   studio: "studio_photos",
   piercing: "piercing_photos",
   reviews: "reviews",
+  shortVideos: "short_videos",
+  earringOptions: "earring_options",
+  customRequests: "custom_requests",
 } as const;
 
 export type SiteSettings = {
@@ -34,6 +37,16 @@ export type SiteSettings = {
   piercing_title: string | null;
   piercing_intro: string | null;
   piercing_baby_blurb: string | null;
+  aftercare_pdf: string | null;
+  piercing_kids_title: string | null;
+  piercing_kids_intro: string | null;
+  piercing_adults_title: string | null;
+  piercing_adults_intro: string | null;
+  about_title: string | null;
+  about_heading: string | null;
+  about_body: string | null;
+  about_photo_1: string | null;
+  about_photo_2: string | null;
 };
 
 export type Artist = {
@@ -53,6 +66,9 @@ export type CategoryPhoto = { id: string; category_id: string | null; photo: str
 export type StudioPhoto = { id: string; photo: string; caption: string | null };
 export type PiercingPhoto = { id: string; photo: string; caption: string | null };
 export type Review = { id: string; client_name: string; photo: string; review: string | null; rating: number | null };
+export type ShortVideo = { id: string; video: string; poster: string | null; caption: string | null };
+export type EarringOption = { id: string; audience: string; metal: string; photo: string | null; benefits: string | null };
+export type CustomRequest = { id: string; name: string; phone: string; email: string | null; description: string; reference: string | null; created_at: string | null };
 export type PortfolioItem = { id: string; artist_id: string | null; photo: string; title: string | null };
 
 export type ArtistWithPortfolio = Artist & { portfolio: PortfolioItem[] };
@@ -194,3 +210,31 @@ export const getReviews = unstable_cache(
   ["reviews"],
   { tags: [TAGS.reviews], revalidate: 3600 }
 );
+
+export const getShortVideos = unstable_cache(
+  async (): Promise<ShortVideo[]> => {
+    return withTimeout<ShortVideo[]>(
+      async () =>
+        (await db.shortVideo.findMany({ orderBy: { sort_order: "asc" } })) as ShortVideo[],
+      [],
+    );
+  },
+  ["short_videos"],
+  { tags: [TAGS.shortVideos], revalidate: 3600 }
+);
+
+const _earringOptions = unstable_cache(
+  async (audience: string): Promise<EarringOption[]> => {
+    return withTimeout<EarringOption[]>(
+      async () =>
+        (await db.earringOption.findMany({
+          where: { audience },
+          orderBy: { sort_order: "asc" },
+        })) as EarringOption[],
+      [],
+    );
+  },
+  ["earring_options"],
+  { tags: [TAGS.earringOptions], revalidate: 3600 }
+);
+export const getEarringOptions = (audience: "kids" | "adults") => _earringOptions(audience);

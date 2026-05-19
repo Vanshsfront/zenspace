@@ -5,13 +5,40 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Menu, X, ExternalLink, LogOut } from "lucide-react";
 
-const NAV = [
-  { href: "/admin", label: "Site settings", exact: true },
-  { href: "/admin/artists", label: "Artists" },
-  { href: "/admin/categories", label: "Categories" },
-  { href: "/admin/studio", label: "Studio photos" },
-  { href: "/admin/piercing", label: "Piercing photos" },
-  { href: "/admin/reviews", label: "Reviews" },
+const NAV_GROUPS: { group: string; items: { href: string; label: string; exact?: boolean }[] }[] = [
+  {
+    group: "Home page",
+    items: [
+      { href: "/admin", label: "Hero, CTA & contact", exact: true },
+      { href: "/admin/studio", label: "Studio strip photos" },
+      { href: "/admin/videos", label: "Short-form videos" },
+    ],
+  },
+  {
+    group: "Piercing",
+    items: [
+      { href: "/admin/piercing-content", label: "Kids & Adults content" },
+      { href: "/admin/piercing", label: "Piercing gallery" },
+    ],
+  },
+  {
+    group: "About",
+    items: [{ href: "/admin/about", label: "About page" }],
+  },
+  {
+    group: "Work & people",
+    items: [
+      { href: "/admin/artists", label: "Artists" },
+      { href: "/admin/categories", label: "Categories" },
+    ],
+  },
+  {
+    group: "Reviews",
+    items: [
+      { href: "/admin/reviews", label: "Reviews" },
+      { href: "/admin/custom-requests", label: "Custom requests" },
+    ],
+  },
 ];
 
 export function AdminShell({ children }: { children: React.ReactNode }) {
@@ -67,20 +94,25 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             </button>
           </div>
 
-          <nav className="space-y-1 flex-1 overflow-y-auto -mx-1 px-1">
-            {NAV.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                prefetch
-                className={`block px-3 py-2 rounded transition-colors ${
-                  isActive(item.href, item.exact)
-                    ? "bg-stone-700 text-white"
-                    : "text-stone-300 hover:bg-stone-800 hover:text-white"
-                }`}
-              >
-                {item.label}
-              </Link>
+          <nav className="space-y-5 flex-1 overflow-y-auto -mx-1 px-1">
+            {NAV_GROUPS.map((g) => (
+              <div key={g.group} className="space-y-1">
+                <p className="px-3 text-[11px] uppercase tracking-widest text-stone-500">{g.group}</p>
+                {g.items.map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    prefetch
+                    className={`block px-3 py-2 rounded transition-colors ${
+                      isActive(item.href, item.exact)
+                        ? "bg-stone-700 text-white"
+                        : "text-stone-300 hover:bg-stone-800 hover:text-white"
+                    }`}
+                  >
+                    {item.label}
+                  </Link>
+                ))}
+              </div>
             ))}
           </nav>
 

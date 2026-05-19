@@ -92,6 +92,40 @@ async function main() {
   }
   if (reviews.length) console.log(`✓ filled photo on ${reviews.length} review(s)`);
 
+  // 5) Earring options — 3 metals × kids/adults. Only seed if none exist.
+  const earringCount = await prisma.earringOption.count();
+  if (earringCount === 0) {
+    const METALS = [
+      {
+        metal: "Stainless Steel",
+        kids: "Implant-grade surgical stainless steel — hypoallergenic and gentle on delicate young skin, ideal for a first piercing.",
+        adults: "Durable, low-maintenance surgical stainless steel that keeps its shine and resists everyday wear.",
+      },
+      {
+        metal: "Gold",
+        kids: "Skin-friendly solid gold studs — soft, non-reactive and a beautiful keepsake for your child's first piercing.",
+        adults: "Solid gold for a warm, premium finish that ages gracefully and suits every outfit.",
+      },
+      {
+        metal: "Silver",
+        kids: "Lightweight sterling silver, gentle for little ears with a classic, understated sparkle.",
+        adults: "Bright sterling silver — a versatile, timeless choice for any style.",
+      },
+    ];
+    for (let i = 0; i < METALS.length; i++) {
+      const m = METALS[i];
+      await prisma.earringOption.create({
+        data: { audience: "kids", metal: m.metal, benefits: m.kids, photo: pick(i + 2), sort_order: i },
+      });
+      await prisma.earringOption.create({
+        data: { audience: "adults", metal: m.metal, benefits: m.adults, photo: pick(i + 4), sort_order: i },
+      });
+    }
+    console.log("✓ earring_options seeded");
+  } else {
+    console.log("• earring_options already seeded — skipped");
+  }
+
   await prisma.$disconnect();
   console.log("Done.");
 }

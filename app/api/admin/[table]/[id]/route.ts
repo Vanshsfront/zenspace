@@ -11,6 +11,9 @@ const MODELS: Record<string, string> = {
   piercing_photos: "piercingPhoto",
   reviews: "review",
   portfolio_items: "portfolioItem",
+  short_videos: "shortVideo",
+  earring_options: "earringOption",
+  custom_requests: "customRequest",
 };
 
 async function guard() {

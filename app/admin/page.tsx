@@ -47,9 +47,13 @@ export default function SiteSettingsAdmin() {
 
   return (
     <div className="max-w-3xl space-y-5">
-      <h1 className="font-serif text-3xl">Site settings</h1>
+      <h1 className="font-serif text-3xl">Home, contact &amp; social</h1>
+      <p className="text-stone-600 text-sm">
+        Hero, closing CTA and the global contact / social details. Piercing and About
+        copy now live in their own sections in the sidebar.
+      </p>
 
-      <h2 className="font-serif text-xl text-stone-700 pt-4">Hero & home</h2>
+      <h2 className="font-serif text-xl text-stone-700 pt-4">Hero &amp; home</h2>
       {field("hero_title", "Hero title")}
       {field("hero_subtitle", "Hero subtitle")}
       {field("hero_description", "Hero description", "textarea")}
@@ -66,12 +70,6 @@ export default function SiteSettingsAdmin() {
       {field("email", "Email")}
       {field("phone", "Phone")}
       {field("whatsapp", "WhatsApp number", "text", "Use international format with country code, no '+', spaces or dashes. e.g., 917208388209")}
-
-      <hr className="my-2" />
-      <h2 className="font-serif text-xl text-stone-700">Piercing page copy</h2>
-      {field("piercing_title", "Page title")}
-      {field("piercing_intro", "Intro paragraph", "textarea")}
-      {field("piercing_baby_blurb", "Baby piercings blurb", "textarea")}
 
       <hr className="my-2" />
       <h2 className="font-serif text-xl text-stone-700">Social</h2>

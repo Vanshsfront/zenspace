@@ -25,7 +25,52 @@ model SiteSettings {
   piercing_intro      String?
   piercing_baby_blurb String?
 
+  aftercare_pdf         String?
+  piercing_kids_title   String?
+  piercing_kids_intro   String?
+  piercing_adults_title String?
+  piercing_adults_intro String?
+
+  about_title   String? @default("Workspace where we create magic")
+  about_heading String? @default("About Zenspace")
+  about_body    String?
+  about_photo_1 String?
+  about_photo_2 String?
+
   @@map("site_settings")
+}
+
+model ShortVideo {
+  id         String  @id @default(uuid()) @db.Uuid
+  video      String
+  poster     String?
+  caption    String?
+  sort_order Int?    @default(0)
+
+  @@map("short_videos")
+}
+
+model EarringOption {
+  id         String  @id @default(uuid()) @db.Uuid
+  audience   String
+  metal      String
+  photo      String?
+  benefits   String?
+  sort_order Int?    @default(0)
+
+  @@map("earring_options")
+}
+
+model CustomRequest {
+  id          String    @id @default(uuid()) @db.Uuid
+  name        String
+  phone       String
+  email       String?
+  description String
+  reference   String?
+  created_at  DateTime? @default(now()) @db.Timestamptz(6)
+
+  @@map("custom_requests")
 }
 
 model Artist {

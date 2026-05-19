@@ -13,6 +13,9 @@ const TABLE_TAGS: Record<string, string> = {
   piercing_photos: TAGS.piercing,
   reviews: TAGS.reviews,
   portfolio_items: TAGS.artists,
+  short_videos: TAGS.shortVideos,
+  earring_options: TAGS.earringOptions,
+  custom_requests: TAGS.customRequests,
 };
 
 function bust(table: string) {
@@ -45,8 +48,16 @@ function bust(table: string) {
   if (table === "studio_photos" || table === "site_settings") {
     revalidatePath("/about");
   }
-  if (table === "piercing_photos" || table === "site_settings") {
+  if (table === "piercing_photos" || table === "earring_options" || table === "site_settings") {
     revalidatePath("/piercing");
+    revalidatePath("/piercing/kids");
+    revalidatePath("/piercing/adults");
+  }
+  if (table === "short_videos") {
+    revalidatePath("/");
+  }
+  if (table === "site_settings") {
+    revalidatePath("/about");
   }
 }
 
@@ -58,7 +69,10 @@ type ModelKey =
   | "studio_photos"
   | "piercing_photos"
   | "reviews"
-  | "portfolio_items";
+  | "portfolio_items"
+  | "short_videos"
+  | "earring_options"
+  | "custom_requests";
 
 const MODELS: Record<ModelKey, { delegate: string; orderBy: any }> = {
   site_settings:    { delegate: "siteSettings",   orderBy: { id: "asc" } },
@@ -69,6 +83,9 @@ const MODELS: Record<ModelKey, { delegate: string; orderBy: any }> = {
   piercing_photos:  { delegate: "piercingPhoto",  orderBy: { sort_order: "asc" } },
   reviews:          { delegate: "review",         orderBy: { sort_order: "asc" } },
   portfolio_items:  { delegate: "portfolioItem",  orderBy: { sort_order: "asc" } },
+  short_videos:     { delegate: "shortVideo",     orderBy: { sort_order: "asc" } },
+  earring_options:  { delegate: "earringOption",  orderBy: { sort_order: "asc" } },
+  custom_requests:  { delegate: "customRequest",  orderBy: { created_at: "desc" } },
 };
 
 function isModelKey(t: string): t is ModelKey {
@@ -123,6 +140,9 @@ function searchFilter(table: ModelKey, q: string): any {
     piercing_photos: ["caption"],
     reviews: ["client_name", "review"],
     portfolio_items: ["title"],
+    short_videos: ["caption"],
+    earring_options: ["audience", "metal", "benefits"],
+    custom_requests: ["name", "phone", "email", "description"],
   };
   const cols = fields[table];
   if (!cols.length) return undefined;

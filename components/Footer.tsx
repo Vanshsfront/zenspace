@@ -5,7 +5,7 @@ import type { SiteSettings } from "@/lib/data";
 export function Footer({ settings }: { settings: SiteSettings | null }) {
   const s = settings;
   return (
-    <footer className="bg-stone-950 text-[#f5f1ea]">
+    <footer className="relative z-10 bg-stone-950 text-[#f5f1ea]">
       <div className="max-w-7xl mx-auto px-6 py-16 grid md:grid-cols-4 gap-12">
         <div>
           <h3 className="font-serif text-xl mb-5">Location</h3>

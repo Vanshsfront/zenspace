@@ -2,14 +2,17 @@
 import { useEffect, useMemo, useState } from "react";
 import { ChevronUp, ChevronDown } from "lucide-react";
 import { ImageUpload } from "./ImageUpload";
+import { FileUpload } from "./_components/FileUpload";
 import { useToast } from "./_components/Toast";
 import { useConfirm } from "./_components/ConfirmDialog";
 
 export type FieldDef = {
   key: string;
   label: string;
-  type?: "text" | "textarea" | "number" | "image" | "select";
+  type?: "text" | "textarea" | "number" | "image" | "select" | "video" | "file";
   options?: { value: string; label: string }[];
+  accept?: string;
+  readOnly?: boolean;
   hidden?: boolean;
 };
 
@@ -104,7 +107,10 @@ export function CrudList({ table, title, fields, filter, disableSearch, reloadKe
   }
 
   const renderField = (val: any, onChange: (v: any) => void, f: FieldDef) => {
+    if (f.readOnly) return <span className="block px-3 py-2 text-sm text-stone-700 break-words">{val || "—"}</span>;
     if (f.type === "image") return <ImageUpload value={val} onChange={onChange} />;
+    if (f.type === "video") return <FileUpload value={val} onChange={onChange} kind="video" accept={f.accept || "video/*"} />;
+    if (f.type === "file") return <FileUpload value={val} onChange={onChange} kind="pdf" accept={f.accept || "*/*"} />;
     if (f.type === "textarea") return <textarea value={val ?? ""} onChange={(e) => onChange(e.target.value)} rows={3} className="w-full px-3 py-2 rounded-lg border bg-white" />;
     if (f.type === "number") return <input type="number" value={val ?? ""} onChange={(e) => onChange(e.target.value === "" ? null : Number(e.target.value))} className="w-full px-3 py-2 rounded-lg border bg-white" />;
     if (f.type === "select")

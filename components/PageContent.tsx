@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Star, MessageCircle, Sparkles, Baby, Gem, Heart, ShieldCheck, Smile, UserCircle2 } from "lucide-react";
 import { motion } from "framer-motion";
+import { useEffect, useRef } from "react";
 import { Marquee } from "@/components/Marquee";
 
 const WHATSAPP_DIGITS = "917208388209";
@@ -47,7 +48,7 @@ const PLACEHOLDER_REVIEWS = [
   { id: "p-r-3", client_name: "Priya Iyer", review: "First piercing for my daughter — kind, quick, and reassuring. Aftercare instructions were clear. Healed without a hitch.", rating: 5, photo: null },
 ];
 
-export function PageContent({ settings, artists, categories, studio, reviews }: any) {
+export function PageContent({ settings, artists, categories, studio, reviews, videos }: any) {
   // Pad to a minimum of 3 so the section never reads as one lonely artist /
   // one lonely review. Real records always show first.
   const displayedArtists =
@@ -138,6 +139,23 @@ export function PageContent({ settings, artists, categories, studio, reviews }: 
         })()}
       </section>
 
+      {/* Short-form videos */}
+      {videos && videos.length > 0 && (
+        <section className="py-16">
+          <motion.h2
+            initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }}
+            className="font-serif text-3xl md:text-4xl mb-12 text-center"
+          >
+            Watch us at work
+          </motion.h2>
+          <Marquee durationSec={80}>
+            {videos.map((v: any) => (
+              <ShortVideoCard key={v.id} src={v.video} poster={v.poster} caption={v.caption} />
+            ))}
+          </Marquee>
+        </section>
+      )}
+
       {/* Piercing — choose your experience */}
       <section className="max-w-7xl mx-auto px-6 py-24 relative">
         <motion.div
@@ -203,7 +221,7 @@ export function PageContent({ settings, artists, categories, studio, reviews }: 
                 Book Now <ArrowRight size={14} />
               </a>
               <Link
-                href="/piercing"
+                href="/piercing/kids"
                 prefetch
                 className="inline-flex items-center px-6 py-2.5 rounded-full border border-pink-300 text-pink-600 text-sm font-medium hover:bg-pink-50 transition-all"
               >
@@ -259,7 +277,7 @@ export function PageContent({ settings, artists, categories, studio, reviews }: 
                 Book Now <ArrowRight size={14} />
               </a>
               <Link
-                href="/piercing"
+                href="/piercing/adults"
                 prefetch
                 className="inline-flex items-center px-6 py-2.5 rounded-full border border-violet-300 text-violet-600 text-sm font-medium hover:bg-violet-50 transition-all"
               >
@@ -466,23 +484,63 @@ export function PageContent({ settings, artists, categories, studio, reviews }: 
   );
 }
 
+function ShortVideoCard({ src, poster, caption }: { src: string; poster?: string | null; caption?: string | null }) {
+  const ref = useRef<HTMLVideoElement>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) el.play().catch(() => {});
+        else el.pause();
+      },
+      { threshold: 0.5 }
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+  return (
+    <div className="relative w-[260px] aspect-[9/16] rounded-[2rem] overflow-hidden shadow-lg shrink-0 bg-stone-900">
+      <video
+        ref={ref}
+        src={src}
+        poster={poster || undefined}
+        muted
+        loop
+        playsInline
+        preload="metadata"
+        className="w-full h-full object-cover"
+      />
+      {caption && (
+        <div className="absolute inset-x-0 bottom-0 p-4 bg-gradient-to-t from-stone-900/80 to-transparent text-stone-50 text-sm">
+          {caption}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function ReviewCard({ r, fallback }: { r: any; fallback: string }) {
   return (
-    <div className="bg-white/80 backdrop-blur-xl p-8 rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-stone-100 h-full">
-      <div className="flex items-center gap-5 mb-6">
-        <div className="relative w-16 h-16 rounded-full overflow-hidden border-2 border-stone-100 shadow-sm bg-stone-200 shrink-0">
-          <Image src={r.photo || fallback} alt={r.client_name} fill className="object-cover" sizes="64px" />
-        </div>
-        <div>
-          <p className="font-serif text-lg text-stone-900">{r.client_name}</p>
-          <div className="flex gap-1 mt-1">
-            {Array.from({ length: r.rating || 5 }).map((_, i) => (
-              <Star key={i} size={14} className="fill-stone-700 text-stone-700" />
-            ))}
-          </div>
-        </div>
+    <div className="bg-white/80 backdrop-blur-xl rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-stone-100 h-full overflow-hidden flex flex-col">
+      <div className="relative w-full aspect-[4/5] bg-stone-200">
+        <Image
+          src={r.photo || fallback}
+          alt={r.client_name}
+          fill
+          className="object-cover"
+          sizes="(min-width: 768px) 380px, 100vw"
+        />
       </div>
-      <p className="text-stone-600 leading-relaxed italic line-clamp-5">"{r.review}"</p>
+      <div className="p-7 flex flex-col flex-1">
+        <p className="font-serif text-xl text-stone-900">{r.client_name}</p>
+        <div className="flex gap-1 mt-1 mb-4">
+          {Array.from({ length: r.rating || 5 }).map((_, i) => (
+            <Star key={i} size={15} className="fill-stone-700 text-stone-700" />
+          ))}
+        </div>
+        <p className="text-stone-600 leading-relaxed italic line-clamp-5">"{r.review}"</p>
+      </div>
     </div>
   );
 }
