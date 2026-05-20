@@ -6,6 +6,7 @@ import { ArrowRight, Star, MessageCircle, Sparkles, Baby, Gem, Heart, ShieldChec
 import { motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import { Marquee } from "@/components/Marquee";
+import { VideoPlaceholderCard } from "./VideoPlaceholderCard";
 import { ServiceFormModal } from "./ServiceFormModal";
 import type { ServiceFormRow } from "@/lib/data";
 
@@ -145,21 +146,23 @@ export function PageContent({ settings, artists, categories, studio, reviews, vi
       </section>
 
       {/* Short-form videos */}
-      {videos && videos.length > 0 && (
-        <section className="py-16">
-          <motion.h2
-            initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }}
-            className="font-serif text-3xl md:text-4xl mb-12 text-center"
-          >
-            Watch us at work
-          </motion.h2>
+      <section className="py-16">
+        <motion.h2
+          initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }}
+          className="font-serif text-3xl md:text-4xl mb-12 text-center"
+        >
+          Watch us at work
+        </motion.h2>
+        {!videos || videos.length === 0 ? (
+          <div className="flex justify-center px-6"><VideoPlaceholderCard /></div>
+        ) : (
           <Marquee durationSec={80}>
             {videos.map((v: any) => (
               <ShortVideoCard key={v.id} src={v.video} poster={v.poster} caption={v.caption} />
             ))}
           </Marquee>
-        </section>
-      )}
+        )}
+      </section>
 
       {/* Piercing — choose your experience */}
       <section className="max-w-7xl mx-auto px-6 py-24 relative">
