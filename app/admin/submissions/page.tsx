@@ -8,6 +8,7 @@ export default function Page() {
       table="service_form_submissions"
       title="Form submissions"
       basePath="/admin/submissions"
+      hideNew
       columns={[
         { key: "created_at", label: "When" },
         { key: "form_id", label: "Form" },

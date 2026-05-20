@@ -22,6 +22,8 @@ type Props<T> = {
   columns: Column<T>[];
   /** Server-side search field key — passed to the API as ?q=. */
   searchable?: boolean;
+  /** Hide the "+ New" link — used for read-only / derived lists with no create route. */
+  hideNew?: boolean;
 };
 
 export function EntityList<T extends { id: string; sort_order?: number | null }>({
@@ -30,6 +32,7 @@ export function EntityList<T extends { id: string; sort_order?: number | null }>
   basePath,
   columns,
   searchable = true,
+  hideNew = false,
 }: Props<T>) {
   const [items, setItems] = useState<T[]>([]);
   const [loading, setLoading] = useState(true);
@@ -109,12 +112,14 @@ export function EntityList<T extends { id: string; sort_order?: number | null }>
     <div className="max-w-5xl">
       <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
         <h1 className="font-serif text-2xl sm:text-3xl">{title}</h1>
-        <Link
-          href={`${basePath}/new`}
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-stone-900 text-white text-sm hover:bg-stone-800 shadow-md"
-        >
-          <Plus size={16} /> New
-        </Link>
+        {!hideNew && (
+          <Link
+            href={`${basePath}/new`}
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-stone-900 text-white text-sm hover:bg-stone-800 shadow-md"
+          >
+            <Plus size={16} /> New
+          </Link>
+        )}
       </div>
 
       {searchable && (

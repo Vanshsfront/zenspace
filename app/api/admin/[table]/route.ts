@@ -155,6 +155,11 @@ function normalizeBody(table: ModelKey, body: Record<string, any>): Record<strin
     }
     if (typeof out.required === "string") {
       out.required = out.required.trim().toLowerCase() === "true";
+    } else if (out.required === null) {
+      // normalizeBody above blanks "" → null, but Prisma's Boolean column is
+      // non-nullable. Coerce back to false. Leave undefined alone so PATCH
+      // requests that omit the key keep the existing row value.
+      out.required = false;
     }
     if (typeof out.sort_order === "string") {
       const n = Number(out.sort_order);

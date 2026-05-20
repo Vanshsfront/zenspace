@@ -8,6 +8,7 @@ export default function Page() {
       table="service_forms"
       title="Booking forms"
       basePath="/admin/service-forms"
+      hideNew
       columns={[
         { key: "slug", label: "Slug" },
         { key: "title", label: "Title" },
