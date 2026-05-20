@@ -54,3 +54,11 @@ export const SERVICE_FORM_FIELD_FIELDS: FieldDef[] = [
   { key: "options", label: "Options for select (comma-separated)", help: "Only used when type is 'select'" },
   { key: "sort_order", label: "Sort order", type: "number" },
 ];
+
+export const SAFETY_ITEM_FIELDS: FieldDef[] = [
+  { key: "audience", label: "Audience (kids / adults / both)", required: true, placeholder: "both" },
+  { key: "title", label: "Title", required: true },
+  { key: "body", label: "Body", type: "textarea", required: true },
+  { key: "photo", label: "Photo", type: "image" },
+  { key: "sort_order", label: "Sort order", type: "number" },
+];
