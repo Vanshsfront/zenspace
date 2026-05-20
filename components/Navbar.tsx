@@ -34,15 +34,19 @@ export function Navbar({ artists, categories }: { artists: NavArtist[]; categori
     <div className="fixed top-4 left-1/2 -translate-x-1/2 w-[95%] max-w-6xl z-50 flex justify-center pointer-events-none">
       <header className="pointer-events-auto w-full rounded-full bg-white/40 backdrop-blur-xl border border-white/40 shadow-[0_8px_32px_rgba(0,0,0,0.05)] transition-all duration-300">
         <nav className="px-6 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center group">
+          <Link href="/" className="flex items-center gap-3 group" aria-label="Zenspace home">
             <Image
-              src="/assets/logo-full.png"
-              alt="Zenspace Art and Tattoo"
-              width={464}
-              height={268}
+              src="/assets/logo.jpg"
+              alt="Zenspace logo"
+              width={64}
+              height={64}
               priority
-              className="h-11 w-auto object-contain group-hover:scale-105 transition-transform"
+              className="h-10 w-10 rounded-full object-cover group-hover:scale-105 transition-transform"
             />
+            <span className="flex flex-col leading-tight">
+              <span className="font-serif font-bold text-stone-900 text-xl tracking-tight">Zenspace</span>
+              <span className="font-serif font-light text-stone-500 text-[11px] tracking-wide">Tattoo and piercing</span>
+            </span>
           </Link>
 
           <ul className="hidden md:flex items-center gap-1 bg-white/30 backdrop-blur-sm px-2 py-1.5 rounded-full border border-white/40 shadow-sm">
