@@ -19,6 +19,7 @@ export const TAGS = {
   earringOptions: "earring_options",
   earrings: "earrings",
   customRequests: "custom_requests",
+  serviceForms: "service-forms",
 } as const;
 
 export type SiteSettings = {
@@ -290,4 +291,38 @@ export const getEarringCategoryWithProducts = unstable_cache(
   },
   ["earring_category_with_products"],
   { tags: [TAGS.earrings], revalidate: 3600 },
+);
+
+export type ServiceFormFieldRow = {
+  id: string;
+  key: string;
+  label: string;
+  type: string;
+  required: boolean;
+  options: string[];
+  sort_order: number | null;
+};
+export type ServiceFormRow = {
+  id: string;
+  slug: string;
+  title: string;
+  intro: string | null;
+  fields: ServiceFormFieldRow[];
+};
+
+export const getServiceForm = unstable_cache(
+  async (slug: string): Promise<ServiceFormRow | null> => {
+    return withTimeout<ServiceFormRow | null>(
+      async () => {
+        const f = await db.serviceForm.findUnique({
+          where: { slug },
+          include: { fields: { orderBy: [{ sort_order: "asc" }] } },
+        });
+        return (f as unknown as ServiceFormRow) ?? null;
+      },
+      null,
+    );
+  },
+  ["service_form_by_slug"],
+  { tags: [TAGS.serviceForms], revalidate: 3600 },
 );

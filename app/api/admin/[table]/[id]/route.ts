@@ -16,6 +16,9 @@ const MODELS: Record<string, string> = {
   earring_categories: "earringCategory",
   earring_products: "earringProduct",
   custom_requests: "customRequest",
+  service_forms: "serviceForm",
+  service_form_fields: "serviceFormField",
+  service_form_submissions: "serviceFormSubmission",
 };
 
 async function guard() {

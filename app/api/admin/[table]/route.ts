@@ -18,6 +18,8 @@ const TABLE_TAGS: Record<string, string> = {
   earring_categories: TAGS.earrings,
   earring_products: TAGS.earrings,
   custom_requests: TAGS.customRequests,
+  service_forms: TAGS.serviceForms,
+  service_form_fields: TAGS.serviceForms,
 };
 
 function bust(table: string) {
@@ -82,7 +84,10 @@ type ModelKey =
   | "earring_options"
   | "earring_categories"
   | "earring_products"
-  | "custom_requests";
+  | "custom_requests"
+  | "service_forms"
+  | "service_form_fields"
+  | "service_form_submissions";
 
 const MODELS: Record<ModelKey, { delegate: string; orderBy: any }> = {
   site_settings:      { delegate: "siteSettings",     orderBy: { id: "asc" } },
@@ -98,6 +103,9 @@ const MODELS: Record<ModelKey, { delegate: string; orderBy: any }> = {
   earring_categories: { delegate: "earringCategory", orderBy: [{ sort_order: "asc" }, { name: "asc" }] },
   earring_products:   { delegate: "earringProduct",  orderBy: [{ sort_order: "asc" }, { name: "asc" }] },
   custom_requests:    { delegate: "customRequest",    orderBy: { created_at: "desc" } },
+  service_forms:           { delegate: "serviceForm",           orderBy: [{ sort_order: "asc" }, { title: "asc" }] },
+  service_form_fields:     { delegate: "serviceFormField",      orderBy: { sort_order: "asc" } },
+  service_form_submissions:{ delegate: "serviceFormSubmission", orderBy: { created_at: "desc" } },
 };
 
 function isModelKey(t: string): t is ModelKey {
@@ -157,6 +165,9 @@ function searchFilter(table: ModelKey, q: string): any {
     earring_categories: ["name", "slug", "audience", "description"],
     earring_products: ["name", "description"],
     custom_requests: ["name", "phone", "email", "description"],
+    service_forms: ["slug", "title", "intro"],
+    service_form_fields: ["key", "label", "type"],
+    service_form_submissions: ["status"],
   };
   const cols = fields[table];
   if (!cols.length) return undefined;
