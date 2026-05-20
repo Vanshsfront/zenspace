@@ -58,7 +58,7 @@ export function PageContent({ settings, artists, categories, studio, reviews, vi
   const displayedArtists =
     (artists?.length ?? 0) >= 3 ? artists : [...(artists ?? []), ...GUEST_ARTISTS].slice(0, 3);
   const displayedReviews =
-    (reviews?.length ?? 0) >= 3 ? reviews : [...(reviews ?? []), ...PLACEHOLDER_REVIEWS].slice(0, 3);
+    (reviews?.length ?? 0) >= 2 ? reviews : [...(reviews ?? []), ...PLACEHOLDER_REVIEWS].slice(0, 2);
   const [openForm, setOpenForm] = useState<null | ServiceFormSlug>(null);
   return (
     <div className="bg-paper-texture">
@@ -393,6 +393,18 @@ export function PageContent({ settings, artists, categories, studio, reviews, vi
           <h2 className="font-serif text-3xl md:text-4xl mb-4 text-center">
             Rated highly by <span className="premium-gradient-text font-bold">250+</span> clients
           </h2>
+          {settings?.instagram && (
+            <p className="text-center mb-6">
+              <a
+                href={settings.instagram}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 text-sm text-stone-600 hover:text-stone-900 underline-offset-4 hover:underline"
+              >
+                Follow us on Instagram →
+              </a>
+            </p>
+          )}
           <div className="flex justify-center gap-1.5 mb-14">
             {Array.from({ length: 5 }).map((_, i) => (
               <motion.div key={i} initial={{ opacity: 0, scale: 0 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.1 }}>
@@ -402,10 +414,10 @@ export function PageContent({ settings, artists, categories, studio, reviews, vi
           </div>
         </motion.div>
 
-        {/* Up to 3 reviews fit on a single row and stay still; beyond that we
+        {/* Up to 2 reviews fit on a single row and stay still; beyond that we
             switch to the marquee carousel so the section doesn't look stretched. */}
-        {displayedReviews.length <= 3 ? (
-          <div className="max-w-7xl mx-auto px-6 grid sm:grid-cols-2 md:grid-cols-3 gap-6">
+        {displayedReviews.length <= 2 ? (
+          <div className="max-w-7xl mx-auto px-6 grid sm:grid-cols-2 gap-6">
             {displayedReviews.map((r: any, i: number) => (
               <ReviewCard key={r.id} r={r} fallback={pickLocal(i + 4)} />
             ))}
@@ -549,13 +561,23 @@ function ReviewCard({ r, fallback }: { r: any; fallback: string }) {
   return (
     <div className="bg-white/80 backdrop-blur-xl rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-stone-100 h-full overflow-hidden flex flex-col">
       <div className="relative w-full aspect-[4/5] bg-stone-200">
-        <Image
-          src={r.photo || fallback}
-          alt={r.client_name}
-          fill
-          className="object-cover"
-          sizes="(min-width: 768px) 380px, 100vw"
-        />
+        {r.video ? (
+          <video
+            src={r.video}
+            poster={r.photo || undefined}
+            autoPlay
+            muted
+            loop
+            playsInline
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+        ) : r.photo ? (
+          <Image src={r.photo} alt={r.client_name} fill className="object-cover" sizes="(min-width: 768px) 380px, 100vw" />
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-stone-100 to-stone-200 text-stone-400">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor" aria-hidden><path d="M8 5v14l11-7L8 5z"/></svg>
+          </div>
+        )}
       </div>
       <div className="p-7 flex flex-col flex-1">
         <p className="font-serif text-xl text-stone-900">{r.client_name}</p>
