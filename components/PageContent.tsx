@@ -480,7 +480,7 @@ export function PageContent({ settings, artists, categories, studio, reviews, vi
                 <h3 className="font-serif text-2xl mb-3">{step.t}</h3>
                 <p className="text-stone-500 leading-relaxed text-sm">{step.d}</p>
                 {i < 3 && (
-                  <ArrowRight className="hidden md:block absolute -right-6 top-1/2 -translate-y-1/2 text-stone-300 group-hover:translate-x-2 group-hover:text-stone-900 transition-all duration-500" size={24} />
+                  <ArrowRight className="hidden md:block absolute -right-6 top-1/2 -translate-y-1/2 text-stone-300 group-hover:translate-x-2 group-hover:text-stone-900 transition-all duration-500 pointer-events-none" size={24} />
                 )}
               </>
             );
