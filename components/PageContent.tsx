@@ -458,12 +458,10 @@ export function PageContent({ settings, artists, categories, studio, reviews, vi
             { slug: "piercing" as const,       t: "Piercing",      d: "Professional piercings done with sterile equipment and precise placement." },
             { slug: null,                       t: "After Care",    d: "Clear aftercare instructions to support healing and help your tattoo stay sharp." },
           ] as const).map((step, i) => {
-            const inner = (
-              <motion.div
-                variants={STAGGER_CHILD}
-                whileHover={{ y: -10 }}
-                className="relative bg-white/60 backdrop-blur-md p-8 rounded-[2rem] border border-stone-200/50 shadow-sm hover:shadow-xl transition-shadow duration-500 group h-full"
-              >
+            const cardClass =
+              "relative text-left bg-white/60 backdrop-blur-md p-8 rounded-[2rem] border border-stone-200/50 shadow-sm hover:shadow-xl transition-shadow duration-500 group h-full";
+            const cardBody = (
+              <>
                 <div className="w-12 h-12 rounded-full bg-stone-900 text-stone-50 flex items-center justify-center font-serif text-xl mb-6 group-hover:scale-110 group-hover:bg-gradient-to-r group-hover:from-stone-900 group-hover:to-stone-700 transition-all duration-300">
                   {i + 1}
                 </div>
@@ -472,20 +470,36 @@ export function PageContent({ settings, artists, categories, studio, reviews, vi
                 {i < 3 && (
                   <ArrowRight className="hidden md:block absolute -right-6 top-1/2 -translate-y-1/2 text-stone-300 group-hover:translate-x-2 group-hover:text-stone-900 transition-all duration-500" size={24} />
                 )}
-              </motion.div>
+              </>
             );
             if (step.slug) {
+              const slug = step.slug;
               return (
-                <button key={i} type="button" onClick={() => setOpenForm(step.slug)} className="text-left">
-                  {inner}
-                </button>
+                <motion.button
+                  key={i}
+                  type="button"
+                  variants={STAGGER_CHILD}
+                  whileHover={{ y: -10 }}
+                  onClick={() => setOpenForm(slug)}
+                  className={cardClass}
+                >
+                  {cardBody}
+                </motion.button>
               );
             }
             const pdf = settings?.aftercare_pdf ?? "/assets/aftercare.pdf";
             return (
-              <a key={i} href={pdf} target="_blank" rel="noopener noreferrer">
-                {inner}
-              </a>
+              <motion.a
+                key={i}
+                href={pdf}
+                target="_blank"
+                rel="noopener noreferrer"
+                variants={STAGGER_CHILD}
+                whileHover={{ y: -10 }}
+                className={cardClass}
+              >
+                {cardBody}
+              </motion.a>
             );
           })}
         </motion.div>
