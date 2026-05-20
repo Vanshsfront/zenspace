@@ -4,7 +4,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Baby, MessageCircle, Phone as PhoneIcon, Sparkles, Gem, FileText, ShieldCheck, Smile, UserCircle2, ArrowRight } from "lucide-react";
-import type { SiteSettings, PiercingPhoto, EarringCategoryRow } from "@/lib/data";
+import type { SiteSettings, PiercingPhoto, EarringCategoryRow, SafetyItemRow } from "@/lib/data";
+import { SafetyItems } from "./SafetyItems";
 
 const STAGGER_CONTAINER = {
   hidden: { opacity: 0 },
@@ -61,11 +62,13 @@ export function PiercingAudienceContent({
   settings,
   photos,
   earringCategories,
+  safetyItems,
 }: {
   audience: "kids" | "adults";
   settings: SiteSettings | null;
   photos: PiercingPhoto[];
   earringCategories: EarringCategoryRow[];
+  safetyItems: SafetyItemRow[];
 }) {
   const c = COPY[audience];
   const title =
@@ -149,6 +152,9 @@ export function PiercingAudienceContent({
             </div>
           )}
         </section>
+
+        {/* What makes us safe? */}
+        <SafetyItems items={safetyItems} />
 
         {/* Gallery */}
         {photos.length > 0 && (
