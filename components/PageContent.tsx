@@ -420,9 +420,9 @@ export function PageContent({ settings, artists, categories, studio, reviews, vi
         {/* Up to 2 reviews fit on a single row and stay still; beyond that we
             switch to the marquee carousel so the section doesn't look stretched. */}
         {displayedReviews.length <= 2 ? (
-          <div className="max-w-7xl mx-auto px-6 grid sm:grid-cols-2 gap-6">
+          <div className="max-w-3xl mx-auto px-6 grid sm:grid-cols-2 gap-4">
             {displayedReviews.map((r: any, i: number) => (
-              <ReviewCard key={r.id} r={r} fallback={pickLocal(i + 4)} />
+              <ReviewCard key={r.id} r={r} fallback={pickLocal(i + 4)} compact />
             ))}
           </div>
         ) : (
@@ -560,10 +560,10 @@ function ShortVideoCard({ src, poster, caption }: { src: string; poster?: string
   );
 }
 
-function ReviewCard({ r, fallback }: { r: any; fallback: string }) {
+function ReviewCard({ r, fallback, compact = false }: { r: any; fallback: string; compact?: boolean }) {
   return (
     <div className="bg-white/80 backdrop-blur-xl rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-stone-100 h-full overflow-hidden flex flex-col">
-      <div className="relative w-full aspect-[4/5] bg-stone-200">
+      <div className={`relative w-full ${compact ? "aspect-[3/4]" : "aspect-[4/5]"} bg-stone-200`}>
         {r.video ? (
           <video
             src={r.video}
