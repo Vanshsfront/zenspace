@@ -16,13 +16,25 @@ export function Navbar({ artists, categories }: { artists: NavArtist[]; categori
 
   useEffect(() => { setOpen(false); setOpenMenu(null); }, [pathname]);
 
+  useEffect(() => {
+    return () => {
+      if (closeTimer.current) {
+        clearTimeout(closeTimer.current);
+        closeTimer.current = null;
+      }
+    };
+  }, []);
+
   function hover(menu: "category" | "artists" | "piercing") {
-    if (closeTimer.current) clearTimeout(closeTimer.current);
+    if (closeTimer.current) {
+      clearTimeout(closeTimer.current);
+      closeTimer.current = null;
+    }
     setOpenMenu(menu);
   }
   function leave() {
     if (closeTimer.current) clearTimeout(closeTimer.current);
-    closeTimer.current = setTimeout(() => setOpenMenu(null), 120);
+    closeTimer.current = setTimeout(() => setOpenMenu(null), 3000);
   }
 
   const linkClass = (active: boolean) =>
