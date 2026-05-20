@@ -20,7 +20,8 @@ export const CATEGORY_FIELDS: FieldDef[] = [
 
 export const REVIEW_FIELDS: FieldDef[] = [
   { key: "client_name", label: "Client name", required: true },
-  { key: "photo", label: "Client photo", type: "image", required: true, help: "Required — every review must have a face." },
+  { key: "photo", label: "Client photo", type: "image", required: false, help: "Optional if a video is uploaded." },
+  { key: "video", label: "Client video (optional)", type: "url", help: "Paste a public video URL (e.g. an uploaded file's URL)." },
   { key: "rating", label: "Rating (1–5)", type: "number" },
   { key: "review", label: "Review text", type: "textarea" },
 ];
