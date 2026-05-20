@@ -24,7 +24,11 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
 
   async function del(fid: string) {
     if (!confirm("Delete this field?")) return;
-    await fetch(`/api/admin/service_form_fields/${fid}`, { method: "DELETE" });
+    await fetch(`/api/admin/service_form_fields`, {
+      method: "DELETE",
+      body: JSON.stringify({ id: fid }),
+      headers: { "content-type": "application/json" },
+    });
     load();
   }
 

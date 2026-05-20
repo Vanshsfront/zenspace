@@ -134,7 +134,7 @@ model PiercingPhoto {
 model Review {
   id          String  @id @default(uuid()) @db.Uuid
   client_name String
-  photo       String
+  photo       String?
   video       String?
   review      String?
   rating      Int?    @default(5)
