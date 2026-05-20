@@ -3,11 +3,9 @@
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Baby, MessageCircle, Phone as PhoneIcon, Sparkles, Gem, FileText, ShieldCheck, Smile, UserCircle2, ArrowRight } from "lucide-react";
+import { Baby, MessageCircle, Phone as PhoneIcon, Sparkles, Gem, ShieldCheck, Smile, UserCircle2, ArrowRight } from "lucide-react";
 import type { SiteSettings, PiercingPhoto, EarringCategoryRow, SafetyItemRow } from "@/lib/data";
 import { SafetyItems } from "./SafetyItems";
-
-const MAPS_URL = "https://maps.app.goo.gl/4Aez6HYucSTLEqp57";
 
 const STAGGER_CONTAINER = {
   hidden: { opacity: 0 },
@@ -79,7 +77,6 @@ export function PiercingAudienceContent({
     (audience === "kids" ? settings?.piercing_kids_intro : settings?.piercing_adults_intro) || c.intro;
   const waHref = whatsappHref(settings?.whatsapp, audience);
   const tel = settings?.phone?.split(/[/,]/)[0]?.trim();
-  const pdf = settings?.aftercare_pdf;
 
   return (
     <div className="bg-paper-texture min-h-screen pt-32 pb-24 px-6 relative overflow-hidden">
@@ -220,25 +217,6 @@ export function PiercingAudienceContent({
             >
               Request a custom design <ArrowRight size={16} />
             </Link>
-            <a
-              href={MAPS_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-white/80 border border-stone-200 text-stone-900 text-sm font-medium hover:bg-white shadow-sm"
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 1 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-              Locate us
-            </a>
-            {pdf && (
-              <a
-                href={pdf}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-full border border-stone-300 text-stone-800 font-medium hover:bg-stone-100 transition-all"
-              >
-                <FileText size={18} /> Aftercare guide (PDF)
-              </a>
-            )}
           </div>
         </div>
       </div>
