@@ -4,9 +4,10 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Star, MessageCircle, Sparkles, Baby, Gem, Heart, ShieldCheck, Smile, UserCircle2 } from "lucide-react";
 import { motion } from "framer-motion";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { Marquee } from "@/components/Marquee";
 import { VideoPlaceholderCard } from "./VideoPlaceholderCard";
+import { VideoCarousel } from "./VideoCarousel";
 import { ServiceFormModal } from "./ServiceFormModal";
 import type { ServiceFormRow } from "@/lib/data";
 
@@ -156,12 +157,23 @@ export function PageContent({ settings, artists, categories, studio, reviews, vi
         {!videos || videos.length === 0 ? (
           <div className="flex justify-center px-6"><VideoPlaceholderCard /></div>
         ) : (
-          <Marquee durationSec={80}>
-            {videos.map((v: any) => (
-              <ShortVideoCard key={v.id} src={v.video} poster={v.poster} caption={v.caption} />
-            ))}
-          </Marquee>
+          <VideoCarousel videos={videos as any} />
         )}
+        <div className="flex justify-center mt-8">
+          <a
+            href="https://www.instagram.com/zenspace_tattoo/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-gradient-to-r from-pink-500 via-purple-500 to-amber-500 text-white text-sm font-medium shadow-md hover:shadow-xl hover:scale-105 transition-all"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <rect x="2" y="2" width="20" height="20" rx="5" />
+              <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+              <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
+            </svg>
+            Follow us on Instagram
+          </a>
+        </div>
       </section>
 
       {/* Piercing — choose your experience */}
@@ -534,42 +546,6 @@ export function PageContent({ settings, artists, categories, studio, reviews, vi
           </motion.div>
         </motion.div>
       </section>
-    </div>
-  );
-}
-
-function ShortVideoCard({ src, poster, caption }: { src: string; poster?: string | null; caption?: string | null }) {
-  const ref = useRef<HTMLVideoElement>(null);
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const io = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) el.play().catch(() => {});
-        else el.pause();
-      },
-      { threshold: 0.5 }
-    );
-    io.observe(el);
-    return () => io.disconnect();
-  }, []);
-  return (
-    <div className="relative w-[260px] aspect-[9/16] rounded-[2rem] overflow-hidden shadow-lg shrink-0 bg-stone-900">
-      <video
-        ref={ref}
-        src={src}
-        poster={poster || undefined}
-        muted
-        loop
-        playsInline
-        preload="metadata"
-        className="w-full h-full object-cover"
-      />
-      {caption && (
-        <div className="absolute inset-x-0 bottom-0 p-4 bg-gradient-to-t from-stone-900/80 to-transparent text-stone-50 text-sm">
-          {caption}
-        </div>
-      )}
     </div>
   );
 }
