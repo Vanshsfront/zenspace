@@ -4,8 +4,10 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Star, MessageCircle, Sparkles, Baby, Gem, Heart, ShieldCheck, Smile, UserCircle2 } from "lucide-react";
 import { motion } from "framer-motion";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Marquee } from "@/components/Marquee";
+import { ServiceFormModal } from "./ServiceFormModal";
+import type { ServiceFormRow } from "@/lib/data";
 
 const WHATSAPP_DIGITS = "917208388209";
 const WHATSAPP_HREF = `https://wa.me/${WHATSAPP_DIGITS}?text=${encodeURIComponent("Hi Zenspace, I'd like to book a consultation.")}`;
@@ -48,13 +50,16 @@ const PLACEHOLDER_REVIEWS = [
   { id: "p-r-3", client_name: "Priya Iyer", review: "First piercing for my daughter — kind, quick, and reassuring. Aftercare instructions were clear. Healed without a hitch.", rating: 5, photo: null },
 ];
 
-export function PageContent({ settings, artists, categories, studio, reviews, videos }: any) {
+type ServiceFormSlug = "custom-design" | "cover-up" | "piercing";
+
+export function PageContent({ settings, artists, categories, studio, reviews, videos, serviceForms }: any & { serviceForms: { [k in ServiceFormSlug]: ServiceFormRow | null } }) {
   // Pad to a minimum of 3 so the section never reads as one lonely artist /
   // one lonely review. Real records always show first.
   const displayedArtists =
     (artists?.length ?? 0) >= 3 ? artists : [...(artists ?? []), ...GUEST_ARTISTS].slice(0, 3);
   const displayedReviews =
     (reviews?.length ?? 0) >= 3 ? reviews : [...(reviews ?? []), ...PLACEHOLDER_REVIEWS].slice(0, 3);
+  const [openForm, setOpenForm] = useState<null | ServiceFormSlug>(null);
   return (
     <div className="bg-paper-texture">
       {/* Hero */}
@@ -432,30 +437,50 @@ export function PageContent({ settings, artists, categories, studio, reviews, vi
           variants={STAGGER_CONTAINER} initial="hidden" whileInView="show" viewport={{ once: true }}
           className="grid md:grid-cols-4 gap-6 relative"
         >
-          {[
-            { t: "Custom Design", d: "Personalized designs with attention to placement, proportions and skin tone." },
-            { t: "Cover Up", d: "Thoughtfully planned cover-ups using strategic layering for clean results." },
-            { t: "Piercing", d: "Professional piercings done with sterile equipment and precise placement." },
-            { t: "After Care", d: "Clear aftercare instructions to support healing and help your tattoo stay sharp." },
-          ].map((step, i) => (
-            <motion.div
-              key={i}
-              variants={STAGGER_CHILD}
-              whileHover={{ y: -10 }}
-              className="relative bg-white/60 backdrop-blur-md p-8 rounded-[2rem] border border-stone-200/50 shadow-sm hover:shadow-xl transition-shadow duration-500 group"
-            >
-              <div className="w-12 h-12 rounded-full bg-stone-900 text-stone-50 flex items-center justify-center font-serif text-xl mb-6 group-hover:scale-110 group-hover:bg-gradient-to-r group-hover:from-stone-900 group-hover:to-stone-700 transition-all duration-300">
-                {i + 1}
-              </div>
-              <h3 className="font-serif text-2xl mb-3">{step.t}</h3>
-              <p className="text-stone-500 leading-relaxed text-sm">{step.d}</p>
-              {i < 3 && (
-                <ArrowRight className="hidden md:block absolute -right-6 top-1/2 -translate-y-1/2 text-stone-300 group-hover:translate-x-2 group-hover:text-stone-900 transition-all duration-500" size={24} />
-              )}
-            </motion.div>
-          ))}
+          {([
+            { slug: "custom-design" as const, t: "Custom Design", d: "Personalized designs with attention to placement, proportions and skin tone." },
+            { slug: "cover-up" as const,       t: "Cover Up",      d: "Thoughtfully planned cover-ups using strategic layering for clean results." },
+            { slug: "piercing" as const,       t: "Piercing",      d: "Professional piercings done with sterile equipment and precise placement." },
+            { slug: null,                       t: "After Care",    d: "Clear aftercare instructions to support healing and help your tattoo stay sharp." },
+          ] as const).map((step, i) => {
+            const inner = (
+              <motion.div
+                variants={STAGGER_CHILD}
+                whileHover={{ y: -10 }}
+                className="relative bg-white/60 backdrop-blur-md p-8 rounded-[2rem] border border-stone-200/50 shadow-sm hover:shadow-xl transition-shadow duration-500 group h-full"
+              >
+                <div className="w-12 h-12 rounded-full bg-stone-900 text-stone-50 flex items-center justify-center font-serif text-xl mb-6 group-hover:scale-110 group-hover:bg-gradient-to-r group-hover:from-stone-900 group-hover:to-stone-700 transition-all duration-300">
+                  {i + 1}
+                </div>
+                <h3 className="font-serif text-2xl mb-3">{step.t}</h3>
+                <p className="text-stone-500 leading-relaxed text-sm">{step.d}</p>
+                {i < 3 && (
+                  <ArrowRight className="hidden md:block absolute -right-6 top-1/2 -translate-y-1/2 text-stone-300 group-hover:translate-x-2 group-hover:text-stone-900 transition-all duration-500" size={24} />
+                )}
+              </motion.div>
+            );
+            if (step.slug) {
+              return (
+                <button key={i} type="button" onClick={() => setOpenForm(step.slug)} className="text-left">
+                  {inner}
+                </button>
+              );
+            }
+            const pdf = settings?.aftercare_pdf ?? "/assets/aftercare.pdf";
+            return (
+              <a key={i} href={pdf} target="_blank" rel="noopener noreferrer">
+                {inner}
+              </a>
+            );
+          })}
         </motion.div>
       </section>
+
+      {(["custom-design", "cover-up", "piercing"] as const).map((slug) => {
+        const f = serviceForms[slug];
+        if (!f) return null;
+        return <ServiceFormModal key={slug} form={f} open={openForm === slug} onClose={() => setOpenForm(null)} />;
+      })}
 
       {/* Closing CTA */}
       <section className="max-w-5xl mx-auto px-6 py-32 text-center relative">
