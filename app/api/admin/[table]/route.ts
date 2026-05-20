@@ -20,6 +20,7 @@ const TABLE_TAGS: Record<string, string> = {
   custom_requests: TAGS.customRequests,
   service_forms: TAGS.serviceForms,
   service_form_fields: TAGS.serviceForms,
+  safety_items: TAGS.safety,
 };
 
 function bust(table: string) {
@@ -63,6 +64,11 @@ function bust(table: string) {
     revalidatePath("/piercing/adults");
     revalidatePath("/piercing/earrings/[slug]", "page");
   }
+  if (table === "safety_items") {
+    revalidateTag("safety", { expire: 0 });
+    revalidatePath("/piercing/kids");
+    revalidatePath("/piercing/adults");
+  }
   if (table === "short_videos") {
     revalidatePath("/");
   }
@@ -87,7 +93,8 @@ type ModelKey =
   | "custom_requests"
   | "service_forms"
   | "service_form_fields"
-  | "service_form_submissions";
+  | "service_form_submissions"
+  | "safety_items";
 
 const MODELS: Record<ModelKey, { delegate: string; orderBy: any }> = {
   site_settings:      { delegate: "siteSettings",     orderBy: { id: "asc" } },
@@ -106,6 +113,7 @@ const MODELS: Record<ModelKey, { delegate: string; orderBy: any }> = {
   service_forms:           { delegate: "serviceForm",           orderBy: [{ sort_order: "asc" }, { title: "asc" }] },
   service_form_fields:     { delegate: "serviceFormField",      orderBy: { sort_order: "asc" } },
   service_form_submissions:{ delegate: "serviceFormSubmission", orderBy: { created_at: "desc" } },
+  safety_items:       { delegate: "safetyItem",       orderBy: { sort_order: "asc" } },
 };
 
 function isModelKey(t: string): t is ModelKey {
@@ -193,6 +201,7 @@ function searchFilter(table: ModelKey, q: string): any {
     service_forms: ["slug", "title", "intro"],
     service_form_fields: ["key", "label", "type"],
     service_form_submissions: ["status"],
+    safety_items: ["title"],
   };
   const cols = fields[table];
   if (!cols.length) return undefined;

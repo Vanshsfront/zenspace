@@ -20,6 +20,7 @@ export const TAGS = {
   earrings: "earrings",
   customRequests: "custom_requests",
   serviceForms: "service-forms",
+  safety: "safety",
 } as const;
 
 export type SiteSettings = {
@@ -325,4 +326,27 @@ export const getServiceForm = unstable_cache(
   },
   ["service_form_by_slug"],
   { tags: [TAGS.serviceForms], revalidate: 3600 },
+);
+
+export type SafetyItemRow = {
+  id: string;
+  audience: string;
+  title: string;
+  body: string;
+  photo: string | null;
+  sort_order: number | null;
+};
+
+export const getSafetyItems = unstable_cache(
+  async (audience: "kids" | "adults"): Promise<SafetyItemRow[]> => {
+    return withTimeout<SafetyItemRow[]>(
+      async () => (await db.safetyItem.findMany({
+        where: { audience: { in: [audience, "both"] } },
+        orderBy: [{ sort_order: "asc" }],
+      })) as SafetyItemRow[],
+      [],
+    );
+  },
+  ["safety_items_by_audience"],
+  { tags: [TAGS.safety], revalidate: 3600 },
 );
