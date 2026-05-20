@@ -7,6 +7,8 @@ import { Baby, MessageCircle, Phone as PhoneIcon, Sparkles, Gem, FileText, Shiel
 import type { SiteSettings, PiercingPhoto, EarringCategoryRow, SafetyItemRow } from "@/lib/data";
 import { SafetyItems } from "./SafetyItems";
 
+const MAPS_URL = "https://maps.app.goo.gl/4Aez6HYucSTLEqp57";
+
 const STAGGER_CONTAINER = {
   hidden: { opacity: 0 },
   show: { opacity: 1, transition: { staggerChildren: 0.12 } },
@@ -218,6 +220,15 @@ export function PiercingAudienceContent({
             >
               Request a custom design <ArrowRight size={16} />
             </Link>
+            <a
+              href={MAPS_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-white/80 border border-stone-200 text-stone-900 text-sm font-medium hover:bg-white shadow-sm"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 1 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+              Locate us
+            </a>
             {pdf && (
               <a
                 href={pdf}
