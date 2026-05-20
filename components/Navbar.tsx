@@ -123,9 +123,14 @@ export function Navbar({ artists, categories }: { artists: NavArtist[]; categori
             <li><Link href="/contact" prefetch className={linkClass(pathname === "/contact")}>Contact</Link></li>
           </ul>
 
-          <Link href="/contact" prefetch className="hidden md:inline-block px-6 py-2 rounded-full bg-stone-900 text-stone-50 text-sm font-medium hover:bg-stone-800 hover:scale-105 transition-all shadow-md">
+          <a
+            href="https://maps.app.goo.gl/4Aez6HYucSTLEqp57"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hidden md:inline-block px-6 py-2 rounded-full bg-stone-900 text-stone-50 text-sm font-medium hover:bg-stone-800 hover:scale-105 transition-all shadow-md"
+          >
             Locate us
-          </Link>
+          </a>
           <button className="md:hidden text-stone-800 p-2 rounded-full hover:bg-white/50 transition-colors" onClick={() => setOpen(!open)} aria-label="menu">
             {open ? <X size={20} /> : <Menu size={20} />}
           </button>
@@ -203,9 +208,14 @@ export function Navbar({ artists, categories }: { artists: NavArtist[]; categori
               <li><Link href="/contact" prefetch className="flex items-center px-4 py-2.5 rounded-2xl hover:bg-stone-100">Contact</Link></li>
 
               <li className="pt-2 mt-1 border-t border-stone-200/70">
-                <Link href="/contact" prefetch className="block text-center px-4 py-2.5 rounded-2xl bg-stone-900 text-stone-50 text-sm font-medium">
+                <a
+                  href="https://maps.app.goo.gl/4Aez6HYucSTLEqp57"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block text-center px-4 py-2.5 rounded-2xl bg-stone-900 text-stone-50 text-sm font-medium"
+                >
                   Locate us
-                </Link>
+                </a>
               </li>
             </ul>
           </div>
