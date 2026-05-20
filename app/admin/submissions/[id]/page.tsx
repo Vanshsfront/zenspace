@@ -16,7 +16,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
 
   async function setStatus(next: string) {
     if (!s) return;
-    await fetch(`/api/admin/service_form_submissions/${id}`, { method: "PATCH", body: JSON.stringify({ status: next }), headers: { "content-type": "application/json" } });
+    await fetch(`/api/admin/service_form_submissions`, { method: "PATCH", body: JSON.stringify({ id, status: next }), headers: { "content-type": "application/json" } });
     setS({ ...s, status: next });
   }
 
