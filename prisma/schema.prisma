@@ -135,6 +135,7 @@ model Review {
   id          String  @id @default(uuid()) @db.Uuid
   client_name String
   photo       String
+  video       String?
   review      String?
   rating      Int?    @default(5)
   sort_order  Int?    @default(0)
@@ -151,4 +152,79 @@ model PortfolioItem {
   artist     Artist? @relation(fields: [artist_id], references: [id], onDelete: Cascade)
 
   @@map("portfolio_items")
+}
+
+model EarringCategory {
+  id          String           @id @default(uuid()) @db.Uuid
+  slug        String           @unique
+  name        String
+  audience    String // "kids" | "adults" | "both"
+  description String?
+  photo       String?
+  sort_order  Int?             @default(0)
+  products    EarringProduct[]
+
+  @@map("earring_categories")
+}
+
+model EarringProduct {
+  id          String          @id @default(uuid()) @db.Uuid
+  category_id String          @db.Uuid
+  category    EarringCategory @relation(fields: [category_id], references: [id], onDelete: Cascade)
+  name        String
+  photo       String?
+  price_inr   Int?
+  description String?
+  sort_order  Int?            @default(0)
+
+  @@map("earring_products")
+}
+
+model ServiceForm {
+  id          String                  @id @default(uuid()) @db.Uuid
+  slug        String                  @unique
+  title       String
+  intro       String?
+  sort_order  Int?                    @default(0)
+  fields      ServiceFormField[]
+  submissions ServiceFormSubmission[]
+
+  @@map("service_forms")
+}
+
+model ServiceFormField {
+  id         String      @id @default(uuid()) @db.Uuid
+  form_id    String      @db.Uuid
+  form       ServiceForm @relation(fields: [form_id], references: [id], onDelete: Cascade)
+  key        String
+  label      String
+  type       String
+  required   Boolean     @default(false)
+  options    String[]    @default([])
+  sort_order Int?        @default(0)
+
+  @@unique([form_id, key])
+  @@map("service_form_fields")
+}
+
+model ServiceFormSubmission {
+  id         String      @id @default(uuid()) @db.Uuid
+  form_id    String      @db.Uuid
+  form       ServiceForm @relation(fields: [form_id], references: [id])
+  payload    Json
+  status     String      @default("new")
+  created_at DateTime    @default(now())
+
+  @@map("service_form_submissions")
+}
+
+model SafetyItem {
+  id         String  @id @default(uuid()) @db.Uuid
+  audience   String
+  title      String
+  body       String
+  photo      String?
+  sort_order Int?    @default(0)
+
+  @@map("safety_items")
 }
