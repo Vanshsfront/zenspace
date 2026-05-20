@@ -141,6 +141,26 @@ function normalizeBody(table: ModelKey, body: Record<string, any>): Record<strin
   if ((table === "categories" || table === "artists" || table === "earring_categories") && !out.slug && typeof out.name === "string") {
     out.slug = slugify(out.name);
   }
+  // The admin field UI types primitive strings. service_form_fields has
+  // String[] (options) and Boolean (required) and Int (sort_order) columns
+  // that Prisma rejects when handed a raw string — coerce here.
+  if (table === "service_form_fields") {
+    if (typeof out.options === "string") {
+      out.options = out.options.split(",").map((s: string) => s.trim()).filter(Boolean);
+    } else if (!Array.isArray(out.options)) {
+      // Don't clobber an absent key on PATCH — only fill on create-time inputs
+      // where the form sent something non-string-non-array. Leaving undefined
+      // lets Prisma keep the existing value on update.
+      if (out.options !== undefined) out.options = [];
+    }
+    if (typeof out.required === "string") {
+      out.required = out.required.trim().toLowerCase() === "true";
+    }
+    if (typeof out.sort_order === "string") {
+      const n = Number(out.sort_order);
+      out.sort_order = Number.isFinite(n) ? n : 0;
+    }
+  }
   return out;
 }
 

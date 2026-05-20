@@ -39,3 +39,17 @@ export const EARRING_PRODUCT_FIELDS: FieldDef[] = [
   { key: "price_inr", label: "Price (₹ INR)", type: "number" },
   { key: "description", label: "Description", type: "textarea" },
 ];
+
+export const SERVICE_FORM_FIELDS: FieldDef[] = [
+  { key: "title", label: "Form title", required: true },
+  { key: "intro", label: "Intro text", type: "textarea" },
+];
+
+export const SERVICE_FORM_FIELD_FIELDS: FieldDef[] = [
+  { key: "label", label: "Label (shown to user)", required: true },
+  { key: "key", label: "Key (machine name)", required: true, help: "lowercase + underscores; changing breaks past submissions referring to this key" },
+  { key: "type", label: "Type", required: true, help: "text | tel | email | textarea | select | file | date" },
+  { key: "required", label: "Required (true / false)", help: "Type 'true' or 'false'" },
+  { key: "options", label: "Options for select (comma-separated)", help: "Only used when type is 'select'" },
+  { key: "sort_order", label: "Sort order", type: "number" },
+];

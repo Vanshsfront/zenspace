@@ -52,6 +52,14 @@ export function EntityForm({ table, id, fields, returnTo, defaults }: Props) {
       }
       const d = await r.json();
       if (!cancelled) {
+        // Hydrate String[] columns back into the free-text input format the
+        // form uses (comma-separated). Currently only `options` on
+        // service_form_fields needs this — the admin route re-splits on save.
+        for (const f of fields) {
+          if (f.key === "options" && Array.isArray(d[f.key])) {
+            d[f.key] = (d[f.key] as unknown[]).join(", ");
+          }
+        }
         setData(d);
         setLoading(false);
       }

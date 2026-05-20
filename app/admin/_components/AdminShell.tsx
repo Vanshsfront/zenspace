@@ -23,6 +23,13 @@ const NAV_GROUPS: { group: string; items: { href: string; label: string; exact?:
     ],
   },
   {
+    group: "Booking forms",
+    items: [
+      { href: "/admin/service-forms", label: "Forms & fields" },
+      { href: "/admin/submissions", label: "Submissions" },
+    ],
+  },
+  {
     group: "About",
     items: [{ href: "/admin/about", label: "About page" }],
   },
