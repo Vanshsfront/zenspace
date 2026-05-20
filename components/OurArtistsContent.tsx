@@ -42,7 +42,7 @@ export function OurArtistsContent({ artists }: { artists: Artist[] }) {
         </motion.div>
 
         {artists.length === 0 ? (
-          <p className="text-center text-stone-500">No artists yet — add some from the admin panel.</p>
+          <p className="text-center text-stone-500">No artists yet. Add some from the admin panel.</p>
         ) : (
           <motion.div
             variants={STAGGER_CONTAINER}

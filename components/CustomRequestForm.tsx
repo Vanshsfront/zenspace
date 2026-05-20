@@ -37,7 +37,7 @@ export function CustomRequestForm() {
       >
         <CheckCircle2 size={48} className="mx-auto text-green-600 mb-4" />
         <h2 className="font-serif text-3xl text-stone-900 mb-2">Request received</h2>
-        <p className="text-stone-600">Thank you — our team will reach out to you shortly.</p>
+        <p className="text-stone-600">Thank you. Our team will reach out to you shortly.</p>
       </motion.div>
     );
   }

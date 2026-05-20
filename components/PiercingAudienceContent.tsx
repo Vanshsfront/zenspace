@@ -32,7 +32,7 @@ const COPY = {
   kids: {
     title: "Piercings for Little Stars",
     intro:
-      "Gentle, sterile piercings for babies and children — done with calm hands, hypoallergenic jewellery, parent-friendly aftercare and a quiet, clean space.",
+      "Gentle, sterile piercings for babies and children, done with calm hands, hypoallergenic jewellery, parent-friendly aftercare and a quiet, clean space.",
     badges: [
       { Icon: Baby, t: "Expert Child Care" },
       { Icon: ShieldCheck, t: "Safe & Hygienic" },
@@ -45,7 +45,7 @@ const COPY = {
   adults: {
     title: "Piercings for everyone",
     intro:
-      "Sterile, single-use needles and hypoallergenic jewellery in a calm, walk-in friendly studio. Ears, nose, navel and more — for first-timers and seasoned collectors.",
+      "Sterile, single-use needles and hypoallergenic jewellery in a calm, walk-in friendly studio. Ears, nose, navel and more, for first-timers and seasoned collectors.",
     badges: [
       { Icon: Sparkles, t: "Trendy Designs" },
       { Icon: UserCircle2, t: "Expert Piercers" },
@@ -189,7 +189,7 @@ export function PiercingAudienceContent({
         <div className="bg-white/70 backdrop-blur-md border border-stone-200/60 rounded-[2.5rem] p-8 md:p-12 shadow-xl text-center">
           <h2 className="font-serif text-3xl md:text-4xl text-stone-900 mb-4">Ready to book?</h2>
           <p className="text-stone-600 leading-relaxed text-lg max-w-2xl mx-auto mb-8">
-            Walk in or reach out — our team will guide you through every step.
+            Walk in or reach out. Our team will guide you through every step.
           </p>
           <div className="flex flex-wrap gap-3 justify-center">
             {waHref && (

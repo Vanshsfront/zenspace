@@ -12,7 +12,7 @@ const FRIENDLY_DESCRIPTION: Record<string, string> = {
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const cat = await getCategoryWithPhotos(slug);
-  return { title: `${cat?.name || "Category"} — Zenspace` };
+  return { title: `${cat?.name || "Category"} | Zenspace` };
 }
 
 export default async function CategoryDetailPage({ params }: { params: Promise<{ slug: string }> }) {

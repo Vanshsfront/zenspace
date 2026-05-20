@@ -116,7 +116,7 @@ export function ContactContent({ settings }: { settings: SiteSettings | null }) 
               <div className="flex text-yellow-500">
                 {Array.from({ length: 5 }).map((_, i) => <Star key={i} size={16} fill="currentColor" />)}
               </div>
-              <span className="text-stone-400 font-medium">— 336 reviews</span>
+              <span className="text-stone-400 font-medium">336 reviews</span>
             </div>
           </motion.div>
 

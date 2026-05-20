@@ -1,7 +1,7 @@
 import { CustomRequestForm } from "@/components/CustomRequestForm";
 import { Sparkles } from "lucide-react";
 
-export const metadata = { title: "Custom Design Request — Zenspace" };
+export const metadata = { title: "Custom Design Request | Zenspace" };
 
 export default function CustomDesignPage() {
   return (
@@ -14,7 +14,7 @@ export default function CustomDesignPage() {
           </span>
           <h1 className="font-serif text-5xl md:text-6xl mb-6 text-stone-900 tracking-tight">Request a custom design</h1>
           <p className="text-lg text-stone-600 leading-relaxed">
-            Tell us what you have in mind. Share your idea, references and any meaning behind it — our artists will get back to you.
+            Tell us what you have in mind. Share your idea, references and any meaning behind it, and our artists will get back to you.
           </p>
         </div>
         <CustomRequestForm />

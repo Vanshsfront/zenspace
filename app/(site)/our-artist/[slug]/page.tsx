@@ -5,7 +5,7 @@ import { getArtistBySlug } from "@/lib/data";
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const a = await getArtistBySlug(slug);
-  return { title: `${a?.name || "Artist"} — Zenspace` };
+  return { title: `${a?.name || "Artist"} | Zenspace` };
 }
 
 export default async function ArtistProfilePage({ params }: { params: Promise<{ slug: string }> }) {

@@ -6,7 +6,7 @@ export default function NotFound() {
       <div className="text-center max-w-lg">
         <h1 className="font-serif text-5xl md:text-6xl mb-4 text-stone-900">Category not found</h1>
         <p className="text-stone-600 mb-8">
-          The category you're looking for doesn't exist yet — it may have been renamed or removed.
+          The category you're looking for doesn't exist yet. It may have been renamed or removed.
         </p>
         <Link
           href="/category"

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Baby, UserCircle2, ArrowRight, Sparkles } from "lucide-react";
 
-export const metadata = { title: "Piercings — Zenspace" };
+export const metadata = { title: "Piercings | Zenspace" };
 
 export default function PiercingLandingPage() {
   return (

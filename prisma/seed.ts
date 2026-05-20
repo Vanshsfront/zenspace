@@ -98,18 +98,18 @@ async function main() {
     const METALS = [
       {
         metal: "Stainless Steel",
-        kids: "Implant-grade surgical stainless steel — hypoallergenic and gentle on delicate young skin, ideal for a first piercing.",
+        kids: "Implant-grade surgical stainless steel, hypoallergenic and gentle on delicate young skin. Ideal for a first piercing.",
         adults: "Durable, low-maintenance surgical stainless steel that keeps its shine and resists everyday wear.",
       },
       {
         metal: "Gold",
-        kids: "Skin-friendly solid gold studs — soft, non-reactive and a beautiful keepsake for your child's first piercing.",
+        kids: "Skin-friendly solid gold studs, soft, non-reactive and a beautiful keepsake for your child's first piercing.",
         adults: "Solid gold for a warm, premium finish that ages gracefully and suits every outfit.",
       },
       {
         metal: "Silver",
         kids: "Lightweight sterling silver, gentle for little ears with a classic, understated sparkle.",
-        adults: "Bright sterling silver — a versatile, timeless choice for any style.",
+        adults: "Bright sterling silver, a versatile, timeless choice for any style.",
       },
     ];
     for (let i = 0; i < METALS.length; i++) {

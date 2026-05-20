@@ -52,7 +52,7 @@ export function CategoryDetailContent({
         </motion.div>
 
         {photos.length === 0 ? (
-          <p className="text-center text-stone-500 italic">Photos for this category coming soon — check back shortly.</p>
+          <p className="text-center text-stone-500 italic">Photos for this category coming soon. Check back shortly.</p>
         ) : (
           <motion.div
             variants={STAGGER_CONTAINER}

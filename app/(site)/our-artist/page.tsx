@@ -1,7 +1,7 @@
 import { OurArtistsContent } from "@/components/OurArtistsContent";
 import { getArtists } from "@/lib/data";
 
-export const metadata = { title: "Our Artists — Zenspace" };
+export const metadata = { title: "Our Artists | Zenspace" };
 
 export default async function ArtistsPage() {
   const artists = await getArtists();

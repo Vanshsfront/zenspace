@@ -10,9 +10,9 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://zenspace.local";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
-  title: "Zenspace Art & Tattoo — Mumbai's consultation-led tattoo studio",
+  title: "Zenspace Art & Tattoo | Mumbai's consultation-led tattoo studio",
   description:
-    "A consultation-led tattoo studio in Andheri East, Mumbai. Custom tattoos, cover-ups, piercings & aftercare — built around anatomy, symbolism and long-term aesthetics.",
+    "A consultation-led tattoo studio in Andheri East, Mumbai. Custom tattoos, cover-ups, piercings and aftercare, built around anatomy, symbolism and long-term aesthetics.",
   keywords: ["tattoo studio mumbai", "andheri tattoo", "custom tattoo", "piercing mumbai", "cover up tattoo", "zenspace"],
   openGraph: {
     title: "Zenspace Art & Tattoo",

@@ -49,7 +49,7 @@ const GUEST_ARTISTS = [
 const PLACEHOLDER_REVIEWS = [
   { id: "p-r-1", client_name: "Aanya Sharma", review: "Calm, clean studio and a long consultation that turned my vague idea into something I'll actually love at 60. Healed beautifully.", rating: 5, photo: null },
   { id: "p-r-2", client_name: "Rohan Mehta", review: "I came in for a cover-up I'd been dreading. They redrew it three times until placement and balance felt right. Worth every minute.", rating: 5, photo: null },
-  { id: "p-r-3", client_name: "Priya Iyer", review: "First piercing for my daughter — kind, quick, and reassuring. Aftercare instructions were clear. Healed without a hitch.", rating: 5, photo: null },
+  { id: "p-r-3", client_name: "Priya Iyer", review: "First piercing for my daughter, kind, quick, and reassuring. Aftercare instructions were clear. Healed without a hitch.", rating: 5, photo: null },
 ];
 
 type ServiceFormSlug = "custom-design" | "cover-up" | "piercing";
@@ -456,7 +456,7 @@ export function PageContent({ settings, artists, categories, studio, reviews, vi
         <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }}>
           <h2 className="font-serif text-3xl md:text-5xl mb-6 text-center">The Process</h2>
           <p className="text-center text-stone-500 mb-16 max-w-2xl mx-auto text-lg">
-            From concept to healed skin — every step handled with ultimate care.
+            From concept to healed skin. Every step handled with ultimate care.
           </p>
         </motion.div>
 

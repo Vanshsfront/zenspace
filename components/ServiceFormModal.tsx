@@ -61,7 +61,7 @@ export function ServiceFormModal({ form, open, onClose }: Props) {
 
         {done ? (
           <div className="py-6 text-center">
-            <p className="text-stone-900 font-medium text-lg">Thanks — we'll be in touch.</p>
+            <p className="text-stone-900 font-medium text-lg">Thanks, we'll be in touch.</p>
             <button onClick={onClose} className="mt-5 px-4 py-2 rounded-full bg-stone-900 text-white text-sm">Close</button>
           </div>
         ) : (
