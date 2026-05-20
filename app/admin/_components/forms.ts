@@ -24,3 +24,18 @@ export const REVIEW_FIELDS: FieldDef[] = [
   { key: "rating", label: "Rating (1–5)", type: "number" },
   { key: "review", label: "Review text", type: "textarea" },
 ];
+
+export const EARRING_CATEGORY_FIELDS: FieldDef[] = [
+  { key: "name", label: "Name", required: true, placeholder: "Stainless Steel, Gold, Silver …" },
+  { key: "slug", label: "Slug (optional)", help: "Becomes /piercing/earrings/<slug>. Auto-generated from name if blank." },
+  { key: "audience", label: "Audience (kids / adults / both)", required: true, placeholder: "kids" },
+  { key: "photo", label: "Cover photo", type: "image" },
+  { key: "description", label: "Description", type: "textarea" },
+];
+
+export const EARRING_PRODUCT_FIELDS: FieldDef[] = [
+  { key: "name", label: "Name", required: true },
+  { key: "photo", label: "Photo", type: "image" },
+  { key: "price_inr", label: "Price (₹ INR)", type: "number" },
+  { key: "description", label: "Description", type: "textarea" },
+];

@@ -19,6 +19,7 @@ const NAV_GROUPS: { group: string; items: { href: string; label: string; exact?:
     items: [
       { href: "/admin/piercing-content", label: "Kids & Adults content" },
       { href: "/admin/piercing", label: "Piercing gallery" },
+      { href: "/admin/earrings", label: "Earring categories" },
     ],
   },
   {
