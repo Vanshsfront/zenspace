@@ -17,6 +17,7 @@ export const TAGS = {
   reviews: "reviews",
   shortVideos: "short_videos",
   earringOptions: "earring_options",
+  earrings: "earrings",
   customRequests: "custom_requests",
 } as const;
 
@@ -238,3 +239,55 @@ const _earringOptions = unstable_cache(
   { tags: [TAGS.earringOptions], revalidate: 3600 }
 );
 export const getEarringOptions = (audience: "kids" | "adults") => _earringOptions(audience);
+
+export type EarringCategoryRow = {
+  id: string;
+  slug: string;
+  name: string;
+  audience: string;
+  description: string | null;
+  photo: string | null;
+  sort_order: number | null;
+};
+export type EarringProductRow = {
+  id: string;
+  category_id: string;
+  name: string;
+  photo: string | null;
+  price_inr: number | null;
+  description: string | null;
+  sort_order: number | null;
+};
+
+export const getEarringCategories = unstable_cache(
+  async (audience: "kids" | "adults"): Promise<EarringCategoryRow[]> => {
+    return withTimeout<EarringCategoryRow[]>(
+      async () => (await db.earringCategory.findMany({
+        where: { audience: { in: [audience, "both"] } },
+        orderBy: [{ sort_order: "asc" }, { name: "asc" }],
+      })) as EarringCategoryRow[],
+      [],
+    );
+  },
+  ["earring_categories_by_audience"],
+  { tags: [TAGS.earrings], revalidate: 3600 },
+);
+
+export const getEarringCategoryWithProducts = unstable_cache(
+  async (slug: string): Promise<{ category: EarringCategoryRow; products: EarringProductRow[] } | null> => {
+    return withTimeout<{ category: EarringCategoryRow; products: EarringProductRow[] } | null>(
+      async () => {
+        const cat = await db.earringCategory.findUnique({ where: { slug } });
+        if (!cat) return null;
+        const products = await db.earringProduct.findMany({
+          where: { category_id: cat.id },
+          orderBy: [{ sort_order: "asc" }, { name: "asc" }],
+        });
+        return { category: cat as EarringCategoryRow, products: products as EarringProductRow[] };
+      },
+      null,
+    );
+  },
+  ["earring_category_with_products"],
+  { tags: [TAGS.earrings], revalidate: 3600 },
+);

@@ -15,6 +15,8 @@ const TABLE_TAGS: Record<string, string> = {
   portfolio_items: TAGS.artists,
   short_videos: TAGS.shortVideos,
   earring_options: TAGS.earringOptions,
+  earring_categories: TAGS.earrings,
+  earring_products: TAGS.earrings,
   custom_requests: TAGS.customRequests,
 };
 
@@ -53,6 +55,12 @@ function bust(table: string) {
     revalidatePath("/piercing/kids");
     revalidatePath("/piercing/adults");
   }
+  if (table === "earring_categories" || table === "earring_products") {
+    revalidateTag("earrings", { expire: 0 });
+    revalidatePath("/piercing/kids");
+    revalidatePath("/piercing/adults");
+    revalidatePath("/piercing/earrings/[slug]", "page");
+  }
   if (table === "short_videos") {
     revalidatePath("/");
   }
@@ -72,20 +80,24 @@ type ModelKey =
   | "portfolio_items"
   | "short_videos"
   | "earring_options"
+  | "earring_categories"
+  | "earring_products"
   | "custom_requests";
 
 const MODELS: Record<ModelKey, { delegate: string; orderBy: any }> = {
-  site_settings:    { delegate: "siteSettings",   orderBy: { id: "asc" } },
-  artists:          { delegate: "artist",         orderBy: [{ sort_order: "asc" }, { name: "asc" }] },
-  categories:       { delegate: "category",       orderBy: [{ sort_order: "asc" }, { name: "asc" }] },
-  category_photos:  { delegate: "categoryPhoto",  orderBy: { sort_order: "asc" } },
-  studio_photos:    { delegate: "studioPhoto",    orderBy: { sort_order: "asc" } },
-  piercing_photos:  { delegate: "piercingPhoto",  orderBy: { sort_order: "asc" } },
-  reviews:          { delegate: "review",         orderBy: { sort_order: "asc" } },
-  portfolio_items:  { delegate: "portfolioItem",  orderBy: { sort_order: "asc" } },
-  short_videos:     { delegate: "shortVideo",     orderBy: { sort_order: "asc" } },
-  earring_options:  { delegate: "earringOption",  orderBy: { sort_order: "asc" } },
-  custom_requests:  { delegate: "customRequest",  orderBy: { created_at: "desc" } },
+  site_settings:      { delegate: "siteSettings",     orderBy: { id: "asc" } },
+  artists:            { delegate: "artist",           orderBy: [{ sort_order: "asc" }, { name: "asc" }] },
+  categories:         { delegate: "category",         orderBy: [{ sort_order: "asc" }, { name: "asc" }] },
+  category_photos:    { delegate: "categoryPhoto",    orderBy: { sort_order: "asc" } },
+  studio_photos:      { delegate: "studioPhoto",      orderBy: { sort_order: "asc" } },
+  piercing_photos:    { delegate: "piercingPhoto",    orderBy: { sort_order: "asc" } },
+  reviews:            { delegate: "review",           orderBy: { sort_order: "asc" } },
+  portfolio_items:    { delegate: "portfolioItem",    orderBy: { sort_order: "asc" } },
+  short_videos:       { delegate: "shortVideo",       orderBy: { sort_order: "asc" } },
+  earring_options:    { delegate: "earringOption",    orderBy: { sort_order: "asc" } },
+  earring_categories: { delegate: "earringCategory", orderBy: [{ sort_order: "asc" }, { name: "asc" }] },
+  earring_products:   { delegate: "earringProduct",  orderBy: [{ sort_order: "asc" }, { name: "asc" }] },
+  custom_requests:    { delegate: "customRequest",    orderBy: { created_at: "desc" } },
 };
 
 function isModelKey(t: string): t is ModelKey {
@@ -118,7 +130,7 @@ function normalizeBody(table: ModelKey, body: Record<string, any>): Record<strin
   }
   // Auto-derive a slug from name when the admin didn't provide one — both for
   // create and patch. Ensures /category/[slug] and /our-artist/[slug] resolve.
-  if ((table === "categories" || table === "artists") && !out.slug && typeof out.name === "string") {
+  if ((table === "categories" || table === "artists" || table === "earring_categories") && !out.slug && typeof out.name === "string") {
     out.slug = slugify(out.name);
   }
   return out;
@@ -142,6 +154,8 @@ function searchFilter(table: ModelKey, q: string): any {
     portfolio_items: ["title"],
     short_videos: ["caption"],
     earring_options: ["audience", "metal", "benefits"],
+    earring_categories: ["name", "slug", "audience", "description"],
+    earring_products: ["name", "description"],
     custom_requests: ["name", "phone", "email", "description"],
   };
   const cols = fields[table];
@@ -154,7 +168,8 @@ function friendlyError(table: ModelKey, e: any): string {
   if (e?.code === "P2002") {
     const field = Array.isArray(e?.meta?.target) ? e.meta.target.join(", ") : (e?.meta?.target || "value");
     if (String(field).includes("slug")) {
-      return `A ${table === "categories" ? "category" : "record"} with that slug already exists. Pick another slug.`;
+      const label = table === "categories" ? "category" : table === "earring_categories" ? "earring category" : "record";
+      return `A ${label} with that slug already exists. Pick another slug.`;
     }
     return `Duplicate ${field}.`;
   }

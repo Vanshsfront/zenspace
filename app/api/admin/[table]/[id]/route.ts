@@ -13,6 +13,8 @@ const MODELS: Record<string, string> = {
   portfolio_items: "portfolioItem",
   short_videos: "shortVideo",
   earring_options: "earringOption",
+  earring_categories: "earringCategory",
+  earring_products: "earringProduct",
   custom_requests: "customRequest",
 };
 
