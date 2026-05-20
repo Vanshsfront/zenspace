@@ -1,13 +1,13 @@
 import { PiercingAudienceContent } from "@/components/PiercingAudienceContent";
-import { getSiteSettings, getPiercingPhotos, getEarringOptions } from "@/lib/data";
+import { getSiteSettings, getPiercingPhotos, getEarringCategories } from "@/lib/data";
 
 export const metadata = { title: "Piercings for Kids — Zenspace" };
 
 export default async function KidsPiercingPage() {
-  const [settings, photos, earrings] = await Promise.all([
+  const [settings, photos, categories] = await Promise.all([
     getSiteSettings(),
     getPiercingPhotos(),
-    getEarringOptions("kids"),
+    getEarringCategories("kids"),
   ]);
-  return <PiercingAudienceContent audience="kids" settings={settings} photos={photos} earrings={earrings} />;
+  return <PiercingAudienceContent audience="kids" settings={settings} photos={photos} earringCategories={categories} />;
 }

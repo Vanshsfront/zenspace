@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Baby, MessageCircle, Phone as PhoneIcon, Sparkles, Gem, FileText, ShieldCheck, Smile, UserCircle2, ArrowRight } from "lucide-react";
-import type { SiteSettings, PiercingPhoto, EarringOption } from "@/lib/data";
+import type { SiteSettings, PiercingPhoto, EarringCategoryRow } from "@/lib/data";
 
 const STAGGER_CONTAINER = {
   hidden: { opacity: 0 },
@@ -60,12 +60,12 @@ export function PiercingAudienceContent({
   audience,
   settings,
   photos,
-  earrings,
+  earringCategories,
 }: {
   audience: "kids" | "adults";
   settings: SiteSettings | null;
   photos: PiercingPhoto[];
-  earrings: EarringOption[];
+  earringCategories: EarringCategoryRow[];
 }) {
   const c = COPY[audience];
   const title =
@@ -111,7 +111,7 @@ export function PiercingAudienceContent({
               ? "Skin-friendly options picked for delicate young ears."
               : "Premium metals to match your style."}
           </p>
-          {earrings.length > 0 ? (
+          {earringCategories.length > 0 ? (
             <motion.div
               variants={STAGGER_CONTAINER}
               initial="hidden"
@@ -119,25 +119,27 @@ export function PiercingAudienceContent({
               viewport={{ once: true, margin: "-100px" }}
               className="grid sm:grid-cols-2 md:grid-cols-3 gap-6 md:gap-8"
             >
-              {earrings.map((e) => (
+              {earringCategories.map((e) => (
                 <motion.div
                   key={e.id}
                   variants={STAGGER_CHILD}
                   className="bg-white/80 backdrop-blur-md border border-stone-200/60 rounded-[2rem] overflow-hidden shadow-lg flex flex-col"
                 >
-                  <div className={`relative aspect-square bg-stone-100 ring-1 ${c.accentRing}`}>
-                    {e.photo ? (
-                      <Image src={e.photo} alt={e.metal} fill className="object-cover" sizes="(min-width: 768px) 30vw, 100vw" />
-                    ) : (
-                      <div className="absolute inset-0 flex items-center justify-center text-stone-400">
-                        <Gem size={40} />
-                      </div>
-                    )}
-                  </div>
-                  <div className="p-6 flex-1 flex flex-col">
-                    <h3 className="font-serif text-2xl text-stone-900 mb-2">{e.metal}</h3>
-                    {e.benefits && <p className="text-stone-600 leading-relaxed text-sm flex-1">{e.benefits}</p>}
-                  </div>
+                  <Link href={`/piercing/earrings/${e.slug}`} className="block">
+                    <div className={`relative aspect-square bg-stone-100 ring-1 ${c.accentRing}`}>
+                      {e.photo ? (
+                        <Image src={e.photo} alt={e.name} fill className="object-cover" sizes="(min-width: 768px) 30vw, 100vw" />
+                      ) : (
+                        <div className="absolute inset-0 flex items-center justify-center text-stone-400">
+                          <Gem size={40} />
+                        </div>
+                      )}
+                    </div>
+                    <div className="p-6 flex-1 flex flex-col">
+                      <h3 className="font-serif text-2xl text-stone-900 mb-2">{e.name}</h3>
+                      {e.description && <p className="text-stone-600 leading-relaxed text-sm flex-1">{e.description}</p>}
+                    </div>
+                  </Link>
                 </motion.div>
               ))}
             </motion.div>
