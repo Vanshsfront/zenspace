@@ -26,7 +26,27 @@ alter table site_settings add column if not exists whatsapp text;
 alter table site_settings add column if not exists piercing_title text;
 alter table site_settings add column if not exists piercing_intro text;
 alter table site_settings add column if not exists piercing_baby_blurb text;
+alter table site_settings add column if not exists google_review_count int default 193;
+alter table site_settings add column if not exists google_reviews_url text default 'https://share.google/pSxgjeACR2Lh3WI9P';
 insert into site_settings (id) values (1) on conflict do nothing;
+update site_settings set google_review_count = 193 where google_review_count is null;
+update site_settings set google_reviews_url = 'https://share.google/pSxgjeACR2Lh3WI9P' where google_reviews_url is null;
+
+-- ─── admin_auth (private) ─────────────────────────────────────────
+-- Admin login password, editable from the panel. Deliberately a separate table
+-- with NO public read policy so it is never exposed via the anon key, unlike
+-- site_settings. The server reads/writes it through Prisma's direct connection,
+-- which bypasses RLS.
+create table if not exists admin_auth (
+  id int primary key default 1,
+  password text not null default 'zenspace123098#',
+  constraint admin_auth_single_row check (id = 1)
+);
+insert into admin_auth (id) values (1) on conflict do nothing;
+alter table admin_auth enable row level security;
+-- No policies = anon/authenticated (PostgREST) get zero rows. Revoke as well so
+-- the table is fully invisible to the public API roles.
+revoke all on admin_auth from anon, authenticated;
 
 -- ─── artists ──────────────────────────────────────────────────────
 create table if not exists artists (

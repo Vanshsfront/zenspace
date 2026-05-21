@@ -43,6 +43,13 @@ html, body { background: #ffffff; color: #0a0a0a; }
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
+  /* Italic glyphs lean past their advance width; with background-clip:text the
+     overhang of the last word on a line gets cut (e.g. "any" in the mobile
+     hero). The right padding extends the painted background past the slant, and
+     box-decoration-break:clone applies it to every wrapped line fragment. */
+  padding-right: 0.12em;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
 }
 
 /* Continuously-scrolling marquee. Pair with <Marquee> which renders children twice

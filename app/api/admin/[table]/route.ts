@@ -180,6 +180,14 @@ function normalizeBody(table: ModelKey, body: Record<string, any>): Record<strin
 // site_settings is a single row — clients PATCH it without an id and we coerce
 function normalizeSettingsBody(body: any) {
   const { id: _id, ...rest } = body;
+  // google_review_count is an Int column; the admin UI sends a string.
+  if (rest.google_review_count !== undefined) {
+    const n = Number(rest.google_review_count);
+    rest.google_review_count =
+      rest.google_review_count === "" || rest.google_review_count === null || !Number.isFinite(n)
+        ? null
+        : Math.trunc(n);
+  }
   return rest;
 }
 

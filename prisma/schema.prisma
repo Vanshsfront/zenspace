@@ -37,7 +37,23 @@ model SiteSettings {
   about_photo_1 String?
   about_photo_2 String?
 
+  // Google reviews badge (contact page). Count is updated by the studio as the
+  // real Google count grows; the URL points at the public Google listing.
+  google_review_count Int?    @default(193)
+  google_reviews_url  String? @default("https://share.google/pSxgjeACR2Lh3WI9P")
+
   @@map("site_settings")
+}
+
+// Admin login password, editable from the admin panel. Kept OUT of site_settings
+// because that table is publicly readable via the Supabase anon key (RLS
+// `using (true)`); admin_auth has RLS enabled with no public policy, so only the
+// server's direct Prisma connection (which bypasses RLS) can read/write it.
+model AdminAuth {
+  id       Int    @id @default(1)
+  password String @default("zenspace123098#")
+
+  @@map("admin_auth")
 }
 
 model ShortVideo {

@@ -4,8 +4,6 @@ import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
 import Lenis from "lenis";
-import Link from "next/link";
-import { Settings } from "lucide-react";
 
 export function ClientEffects() {
   const pathname = usePathname();
@@ -100,18 +98,7 @@ export function ClientEffects() {
           transition={{ type: "spring", stiffness: 300, damping: 28, mass: 0.5 }}
         />
       )}
-
-      {/* Floating admin entry — always available, even on touch devices. */}
-      <div className="fixed right-4 md:right-6 top-1/2 -translate-y-1/2 z-[9998]">
-        <Link
-          href="/admin-login"
-          aria-label="Admin panel"
-          className="w-12 h-12 md:w-14 md:h-14 bg-white/70 backdrop-blur-md rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-white/50 flex items-center justify-center text-stone-800 transition-all duration-300 hover:bg-stone-900 hover:text-white hover:scale-110 pointer-events-auto"
-          title="Admin Panel"
-        >
-          <Settings size={20} className="md:size-[22px] animate-[spin_6s_linear_infinite]" />
-        </Link>
-      </div>
+      {/* Admin panel is reached directly at /admin-login — no on-page entry. */}
     </>
   );
 }

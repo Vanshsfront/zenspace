@@ -10,11 +10,14 @@ npm install
 ```
 
 ### 2. Environment
-`.env.local` already contains Supabase keys. Optionally override admin password:
+`.env.local` already contains Supabase keys. The admin password is stored in the
+`admin_auth` table and is editable from the admin panel (Site settings → Admin
+password). The `ADMIN_PASSWORD` env var is only a fallback used when the DB is
+unreachable:
 ```
 ADMIN_PASSWORD=your-strong-password
 ```
-Default admin password: `zenspace2026`
+Default admin password: `zenspace123098#`
 
 ### 3. Supabase schema
 Open the Supabase SQL editor and run `supabase/schema.sql`. This creates tables, RLS policies, and the public `media` storage bucket.

@@ -7,6 +7,9 @@ type Settings = Record<string, any>;
 export default function SiteSettingsAdmin() {
   const [s, setS] = useState<Settings | null>(null);
   const [msg, setMsg] = useState("");
+  // Write-only: the current password is never loaded back from the server.
+  // Left blank, it keeps the existing password on save.
+  const [newPw, setNewPw] = useState("");
 
   useEffect(() => {
     let cancelled = false;
@@ -29,7 +32,14 @@ export default function SiteSettingsAdmin() {
 
   async function save() {
     const r = await fetch("/api/admin/site_settings", { method: "PATCH", body: JSON.stringify(s) });
-    setMsg(r.ok ? "Saved" : "Error");
+    let ok = r.ok;
+    // The password lives in its own table — send it only when a new one was typed.
+    if (ok && newPw.trim()) {
+      const p = await fetch("/api/admin/password", { method: "POST", body: JSON.stringify({ password: newPw.trim() }) });
+      ok = p.ok;
+      if (p.ok) setNewPw("");
+    }
+    setMsg(ok ? "Saved" : "Error");
     setTimeout(() => setMsg(""), 2000);
   }
 
@@ -76,6 +86,27 @@ export default function SiteSettingsAdmin() {
       {field("instagram", "Instagram URL")}
       {field("facebook", "Facebook URL")}
       {field("pinterest", "Pinterest URL")}
+
+      <hr className="my-2" />
+      <h2 className="font-serif text-xl text-stone-700">Google reviews</h2>
+      <p className="text-stone-500 text-xs -mt-2">Shown in the rating badge on the contact page. Update the count to match your live Google listing.</p>
+      {field("google_review_count", "Number of reviews", "text", "Whole number, e.g. 193")}
+      {field("google_reviews_url", "Google reviews link", "text", "Tapping the badge opens this URL")}
+
+      <hr className="my-2" />
+      <h2 className="font-serif text-xl text-stone-700">Admin password</h2>
+      <label className="block">
+        <span className="text-sm font-medium">New password</span>
+        <span className="block text-xs text-stone-500 mb-1">Leave blank to keep the current password. Setting a new one takes effect on your next sign-in.</span>
+        <input
+          type="password"
+          value={newPw}
+          onChange={(e) => setNewPw(e.target.value)}
+          autoComplete="new-password"
+          placeholder="••••••••"
+          className="w-full mt-1 px-3 py-2 rounded-lg border bg-white"
+        />
+      </label>
 
       <div className="flex items-center gap-3 pt-4">
         <button onClick={save} className="px-6 py-2.5 rounded-full bg-stone-900 text-white hover:bg-stone-800">Save</button>

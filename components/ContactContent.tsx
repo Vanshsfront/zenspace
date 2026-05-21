@@ -111,13 +111,19 @@ export function ContactContent({ settings }: { settings: SiteSettings | null }) 
               </a>
             )}
 
-            <div className="flex flex-wrap items-center gap-3 bg-stone-800/80 w-fit px-6 py-3 rounded-full border border-stone-700 backdrop-blur-md relative z-10 mt-auto">
+            <a
+              href={settings?.google_reviews_url || "https://share.google/pSxgjeACR2Lh3WI9P"}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="See our Google reviews"
+              className="flex flex-wrap items-center gap-3 bg-stone-800/80 w-fit px-6 py-3 rounded-full border border-stone-700 backdrop-blur-md relative z-10 mt-auto transition-all hover:bg-stone-700/80 hover:border-stone-600 hover:scale-[1.03]"
+            >
               <span className="font-bold text-xl">5.0</span>
               <div className="flex text-yellow-500">
                 {Array.from({ length: 5 }).map((_, i) => <Star key={i} size={16} fill="currentColor" />)}
               </div>
-              <span className="text-stone-400 font-medium">336 reviews</span>
-            </div>
+              <span className="text-stone-400 font-medium">{settings?.google_review_count ?? 193} reviews</span>
+            </a>
           </motion.div>
 
           {/* Right: form */}

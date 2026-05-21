@@ -50,6 +50,8 @@ export type SiteSettings = {
   about_body: string | null;
   about_photo_1: string | null;
   about_photo_2: string | null;
+  google_review_count: number | null;
+  google_reviews_url: string | null;
 };
 
 export type Artist = {

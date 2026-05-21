@@ -19,7 +19,6 @@ export default function LoginPage() {
         <input type="password" value={pw} onChange={(e) => setPw(e.target.value)} placeholder="Password" className="w-full px-4 py-3 rounded-lg border" />
         {err && <p className="text-red-600 text-sm">{err}</p>}
         <button className="w-full py-3 rounded-full bg-[#1a1613] text-white">Sign in</button>
-        <p className="text-xs text-stone-500 text-center">Default password: zenspace2026 (set ADMIN_PASSWORD env to override)</p>
       </form>
     </div>
   );
