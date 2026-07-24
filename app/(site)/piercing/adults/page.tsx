@@ -6,7 +6,7 @@ export const metadata = { title: "Piercings for Adults | Zenspace" };
 export default async function AdultsPiercingPage() {
   const [settings, photos, categories, safetyItems] = await Promise.all([
     getSiteSettings(),
-    getPiercingPhotos(),
+    getPiercingPhotos("adults"),
     getEarringCategories("adults"),
     getSafetyItems("adults"),
   ]);

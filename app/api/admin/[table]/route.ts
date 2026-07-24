@@ -198,7 +198,7 @@ function searchFilter(table: ModelKey, q: string): any {
     categories: ["name", "slug"],
     category_photos: ["caption"],
     studio_photos: ["caption"],
-    piercing_photos: ["caption"],
+    piercing_photos: ["caption", "audience"],
     reviews: ["client_name", "review"],
     portfolio_items: ["title"],
     short_videos: ["caption"],

@@ -72,7 +72,7 @@ export type Artist = {
 export type Category = { id: string; name: string; slug: string | null; photo: string | null; description: string | null };
 export type CategoryPhoto = { id: string; category_id: string | null; photo: string; caption: string | null };
 export type StudioPhoto = { id: string; photo: string; caption: string | null };
-export type PiercingPhoto = { id: string; photo: string; caption: string | null };
+export type PiercingPhoto = { id: string; photo: string; caption: string | null; audience: string };
 export type Review = { id: string; client_name: string; photo: string | null; video: string | null; review: string | null; rating: number | null };
 export type ShortVideo = { id: string; video: string; poster: string | null; caption: string | null };
 export type EarringOption = { id: string; audience: string; metal: string; photo: string | null; benefits: string | null };
@@ -195,17 +195,21 @@ export const getStudioPhotos = unstable_cache(
   { tags: [TAGS.studio], revalidate: 3600 }
 );
 
-export const getPiercingPhotos = unstable_cache(
-  async (): Promise<PiercingPhoto[]> => {
+const _piercingPhotos = unstable_cache(
+  async (audience: "kids" | "adults"): Promise<PiercingPhoto[]> => {
     return withTimeout<PiercingPhoto[]>(
       async () =>
-        (await db.piercingPhoto.findMany({ orderBy: { sort_order: "asc" } })) as PiercingPhoto[],
+        (await db.piercingPhoto.findMany({
+          where: { audience },
+          orderBy: { sort_order: "asc" },
+        })) as PiercingPhoto[],
       [],
     );
   },
-  ["piercing_photos"],
+  ["piercing_photos_by_audience"],
   { tags: [TAGS.piercing], revalidate: 3600 }
 );
+export const getPiercingPhotos = (audience: "kids" | "adults") => _piercingPhotos(audience);
 
 export const getReviews = unstable_cache(
   async (): Promise<Review[]> => {
