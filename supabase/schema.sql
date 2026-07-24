@@ -197,7 +197,7 @@ create table if not exists legal_pages (
 alter table blog_posts  enable row level security;
 alter table legal_pages enable row level security;
 do $$ begin
-  create policy "public read blog_posts"  on blog_posts  for select using (true);
+  create policy "public read blog_posts"  on blog_posts  for select using (published = true);
   create policy "public read legal_pages" on legal_pages for select using (true);
 exception when duplicate_object then null; end $$;
 
@@ -216,13 +216,13 @@ insert into legal_pages (slug, title, blocks) values
    '[{"type":"paragraph","text":"This is a placeholder Privacy Policy. Replace this text from the admin panel."}]'::jsonb)
 on conflict (slug) do nothing;
 
--- Raise the media bucket file size limit to 200 MB for large photos + videos.
-update storage.buckets set file_size_limit = 209715200 where id = 'media';
-
 -- ─── Storage bucket for media uploads ─────────────────────────────
-insert into storage.buckets (id, name, public)
-  values ('media', 'media', true)
-  on conflict (id) do nothing;
+-- 209715200 = 200 MB, so large photos + videos are accepted. Folded into the
+-- insert (with do-update) so a fresh bootstrap sets the limit regardless of
+-- statement order.
+insert into storage.buckets (id, name, public, file_size_limit)
+  values ('media', 'media', true, 209715200)
+  on conflict (id) do update set file_size_limit = excluded.file_size_limit;
 
 do $$ begin
   create policy "public read media" on storage.objects for select using (bucket_id = 'media');
