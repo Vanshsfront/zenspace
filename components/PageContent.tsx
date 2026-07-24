@@ -103,14 +103,26 @@ export function PageContent({ settings, artists, categories, studio, reviews, vi
           whileHover={{ scale: 1.02, rotate: 1 }}
           className="relative h-[420px] md:h-[560px] rounded-[2.5rem] overflow-hidden shadow-2xl"
         >
-          <Image
-            src={settings?.hero_image || pickLocal(0)}
-            alt="Featured tattoo"
-            fill
-            className="object-cover"
-            priority
-            sizes="(min-width: 768px) 50vw, 100vw"
-          />
+          {settings?.hero_video ? (
+            <video
+              src={settings.hero_video}
+              poster={settings?.hero_image || pickLocal(0)}
+              autoPlay
+              muted
+              loop
+              playsInline
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+          ) : (
+            <Image
+              src={settings?.hero_image || pickLocal(0)}
+              alt="Featured tattoo"
+              fill
+              className="object-cover"
+              priority
+              sizes="(min-width: 768px) 50vw, 100vw"
+            />
+          )}
           <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent mix-blend-overlay" />
         </motion.div>
       </section>

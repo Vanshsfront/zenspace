@@ -28,6 +28,9 @@ export type SiteSettings = {
   hero_subtitle: string | null;
   hero_description: string | null;
   hero_image: string | null;
+  hero_video: string | null;
+  home_piercing_kids_image: string | null;
+  home_piercing_adults_image: string | null;
   cta_title: string | null;
   cta_subtitle: string | null;
   address: string | null;

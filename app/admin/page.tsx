@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { ImageUpload } from "./ImageUpload";
+import { FileUpload } from "./_components/FileUpload";
 
 type Settings = Record<string, any>;
 
@@ -70,6 +71,11 @@ export default function SiteSettingsAdmin() {
       <div>
         <span className="text-sm font-medium">Hero image</span>
         <div className="mt-1"><ImageUpload value={s.hero_image} onChange={(url) => setS({ ...s, hero_image: url })} /></div>
+      </div>
+      <div>
+        <span className="text-sm font-medium">Hero video (optional)</span>
+        <span className="block text-xs text-stone-500 mb-1">Home → hero. Plays muted & looping in place of the hero image. Leave empty to show the image.</span>
+        <div className="mt-1"><FileUpload value={s.hero_video} onChange={(url) => setS({ ...s, hero_video: url })} kind="video" accept="video/*" /></div>
       </div>
       {field("cta_title", "Closing CTA title")}
       {field("cta_subtitle", "Closing CTA subtitle", "textarea")}
