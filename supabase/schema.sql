@@ -167,6 +167,58 @@ do $$ begin
   create policy "public read portfolio_items" on portfolio_items  for select using (true);
 exception when duplicate_object then null; end $$;
 
+-- ─── admin & media revamp (2026-07-24) ────────────────────────────
+alter table site_settings add column if not exists hero_video text;
+alter table site_settings add column if not exists home_piercing_kids_image text;
+alter table site_settings add column if not exists home_piercing_adults_image text;
+alter table piercing_photos add column if not exists audience text not null default 'adults';
+
+create table if not exists blog_posts (
+  id uuid primary key default gen_random_uuid(),
+  slug text unique not null,
+  title text not null,
+  excerpt text,
+  cover_image text,
+  blocks jsonb not null default '[]'::jsonb,
+  published boolean not null default false,
+  published_at timestamptz,
+  sort_order int default 0,
+  created_at timestamptz default now()
+);
+
+create table if not exists legal_pages (
+  id uuid primary key default gen_random_uuid(),
+  slug text unique not null,
+  title text not null,
+  blocks jsonb not null default '[]'::jsonb,
+  updated_at timestamptz default now()
+);
+
+alter table blog_posts  enable row level security;
+alter table legal_pages enable row level security;
+do $$ begin
+  create policy "public read blog_posts"  on blog_posts  for select using (true);
+  create policy "public read legal_pages" on legal_pages for select using (true);
+exception when duplicate_object then null; end $$;
+
+-- Seed two dummy published blog posts + the two legal pages.
+insert into blog_posts (slug, title, excerpt, published, published_at, sort_order, blocks) values
+  ('welcome-to-zenspace', 'Welcome to Zenspace', 'A quick look at how we approach custom tattoo and piercing work.', true, now(), 1,
+   '[{"type":"heading","level":"h2","text":"Our approach"},{"type":"paragraph","text":"At Zenspace we treat every piece as a collaboration. This is placeholder copy you can edit from the admin panel."},{"type":"paragraph","text":"Add headings, paragraphs and images to build out each post."}]'::jsonb),
+  ('aftercare-basics', 'Piercing aftercare basics', 'Simple, studio-tested steps to heal cleanly.', true, now(), 2,
+   '[{"type":"heading","level":"h2","text":"The first two weeks"},{"type":"paragraph","text":"Placeholder aftercare guidance. Edit this from the admin panel."}]'::jsonb)
+on conflict (slug) do nothing;
+
+insert into legal_pages (slug, title, blocks) values
+  ('terms', 'Terms & Conditions',
+   '[{"type":"paragraph","text":"These are placeholder Terms & Conditions. Replace this text from the admin panel."}]'::jsonb),
+  ('privacy', 'Privacy Policy',
+   '[{"type":"paragraph","text":"This is a placeholder Privacy Policy. Replace this text from the admin panel."}]'::jsonb)
+on conflict (slug) do nothing;
+
+-- Raise the media bucket file size limit to 200 MB for large photos + videos.
+update storage.buckets set file_size_limit = 209715200 where id = 'media';
+
 -- ─── Storage bucket for media uploads ─────────────────────────────
 insert into storage.buckets (id, name, public)
   values ('media', 'media', true)

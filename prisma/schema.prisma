@@ -12,6 +12,9 @@ model SiteSettings {
   hero_subtitle       String? @default("Not just any tattoo.")
   hero_description    String? @default("A consultation-led process built around anatomy, symbolism and long term aesthetics.")
   hero_image          String?
+  hero_video          String?
+  home_piercing_kids_image   String?
+  home_piercing_adults_image String?
   cta_title           String? @default("Zenspace — Where your story becomes timeless art")
   cta_subtitle        String? @default("Custom tattoos crafted with passion, precision and meaning.")
   address             String? @default("Shop No. 101, 1st Floor, Zenspace Art and Tattoo, Akruti Commercial Complex, MIDC Central Rd, Near Akruti Centre Point, Gautam Nagar, Chakala Industrial Area (MIDC), Andheri East, Mumbai, Maharashtra 400093")
@@ -142,6 +145,7 @@ model PiercingPhoto {
   id         String  @id @default(uuid()) @db.Uuid
   photo      String
   caption    String?
+  audience   String  @default("adults")
   sort_order Int?    @default(0)
 
   @@map("piercing_photos")
@@ -243,4 +247,29 @@ model SafetyItem {
   sort_order Int?    @default(0)
 
   @@map("safety_items")
+}
+
+model BlogPost {
+  id           String    @id @default(uuid()) @db.Uuid
+  slug         String    @unique
+  title        String
+  excerpt      String?
+  cover_image  String?
+  blocks       Json      @default("[]")
+  published    Boolean   @default(false)
+  published_at DateTime? @db.Timestamptz(6)
+  sort_order   Int?      @default(0)
+  created_at   DateTime? @default(now()) @db.Timestamptz(6)
+
+  @@map("blog_posts")
+}
+
+model LegalPage {
+  id         String    @id @default(uuid()) @db.Uuid
+  slug       String    @unique // "terms" | "privacy"
+  title      String
+  blocks     Json      @default("[]")
+  updated_at DateTime? @default(now()) @db.Timestamptz(6)
+
+  @@map("legal_pages")
 }
