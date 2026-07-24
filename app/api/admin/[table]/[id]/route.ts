@@ -20,6 +20,8 @@ const MODELS: Record<string, string> = {
   service_form_fields: "serviceFormField",
   service_form_submissions: "serviceFormSubmission",
   safety_items: "safetyItem",
+  blog_posts: "blogPost",
+  legal_pages: "legalPage",
 };
 
 async function guard() {

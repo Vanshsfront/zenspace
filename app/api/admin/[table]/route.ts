@@ -21,6 +21,8 @@ const TABLE_TAGS: Record<string, string> = {
   service_forms: TAGS.serviceForms,
   service_form_fields: TAGS.serviceForms,
   safety_items: TAGS.safety,
+  blog_posts: TAGS.blog,
+  legal_pages: TAGS.legal,
 };
 
 function bust(table: string) {
@@ -75,6 +77,16 @@ function bust(table: string) {
   if (table === "site_settings") {
     revalidatePath("/about");
   }
+  if (table === "blog_posts") {
+    revalidateTag("blog_posts", { expire: 0 });
+    revalidatePath("/blog");
+    revalidatePath("/blog/[slug]", "page");
+  }
+  if (table === "legal_pages") {
+    revalidateTag("legal_pages", { expire: 0 });
+    revalidatePath("/terms");
+    revalidatePath("/privacy");
+  }
 }
 
 type ModelKey =
@@ -94,7 +106,9 @@ type ModelKey =
   | "service_forms"
   | "service_form_fields"
   | "service_form_submissions"
-  | "safety_items";
+  | "safety_items"
+  | "blog_posts"
+  | "legal_pages";
 
 const MODELS: Record<ModelKey, { delegate: string; orderBy: any }> = {
   site_settings:      { delegate: "siteSettings",     orderBy: { id: "asc" } },
@@ -114,6 +128,8 @@ const MODELS: Record<ModelKey, { delegate: string; orderBy: any }> = {
   service_form_fields:     { delegate: "serviceFormField",      orderBy: { sort_order: "asc" } },
   service_form_submissions:{ delegate: "serviceFormSubmission", orderBy: { created_at: "desc" } },
   safety_items:       { delegate: "safetyItem",       orderBy: { sort_order: "asc" } },
+  blog_posts:         { delegate: "blogPost",         orderBy: [{ sort_order: "asc" }, { published_at: "desc" }] },
+  legal_pages:        { delegate: "legalPage",        orderBy: { slug: "asc" } },
 };
 
 function isModelKey(t: string): t is ModelKey {
@@ -146,8 +162,20 @@ function normalizeBody(table: ModelKey, body: Record<string, any>): Record<strin
   }
   // Auto-derive a slug from name when the admin didn't provide one — both for
   // create and patch. Ensures /category/[slug] and /our-artist/[slug] resolve.
-  if ((table === "categories" || table === "artists" || table === "earring_categories") && !out.slug && typeof out.name === "string") {
+  if ((table === "categories" || table === "artists" || table === "earring_categories" || table === "blog_posts") && !out.slug && typeof out.name === "string") {
     out.slug = slugify(out.name);
+  }
+  if (table === "blog_posts" && !out.slug && typeof out.title === "string") {
+    out.slug = slugify(out.title);
+  }
+  if (table === "blog_posts") {
+    if (typeof out.published === "string") out.published = out.published === "true";
+    if (out.published === null) out.published = false;
+    if (typeof out.published_at === "string" && out.published_at) out.published_at = new Date(out.published_at);
+    if (typeof out.sort_order === "string") {
+      const n = Number(out.sort_order);
+      out.sort_order = Number.isFinite(n) ? n : 0;
+    }
   }
   // The admin field UI types primitive strings. service_form_fields has
   // String[] (options) and Boolean (required) and Int (sort_order) columns
@@ -210,6 +238,8 @@ function searchFilter(table: ModelKey, q: string): any {
     service_form_fields: ["key", "label", "type"],
     service_form_submissions: ["status"],
     safety_items: ["title"],
+    blog_posts: ["title", "slug", "excerpt"],
+    legal_pages: ["title", "slug"],
   };
   const cols = fields[table];
   if (!cols.length) return undefined;

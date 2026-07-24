@@ -21,6 +21,8 @@ export const TAGS = {
   customRequests: "custom_requests",
   serviceForms: "service-forms",
   safety: "safety",
+  blog: "blog_posts",
+  legal: "legal_pages",
 } as const;
 
 export type SiteSettings = {
@@ -359,3 +361,56 @@ export const getSafetyItems = unstable_cache(
   ["safety_items_by_audience"],
   { tags: [TAGS.safety], revalidate: 3600 },
 );
+
+export type BlogPostRow = {
+  id: string;
+  slug: string;
+  title: string;
+  excerpt: string | null;
+  cover_image: string | null;
+  blocks: unknown;
+  published: boolean;
+  published_at: string | null;
+  sort_order: number | null;
+};
+export type LegalPageRow = { id: string; slug: string; title: string; blocks: unknown };
+
+export const getBlogPosts = unstable_cache(
+  async (): Promise<BlogPostRow[]> => {
+    return withTimeout<BlogPostRow[]>(
+      async () =>
+        (await db.blogPost.findMany({
+          where: { published: true },
+          orderBy: [{ published_at: "desc" }, { sort_order: "asc" }],
+        })) as BlogPostRow[],
+      [],
+    );
+  },
+  ["blog_posts_published"],
+  { tags: [TAGS.blog], revalidate: 3600 },
+);
+
+const _blogPost = unstable_cache(
+  async (slug: string): Promise<BlogPostRow | null> => {
+    return withTimeout<BlogPostRow | null>(
+      async () =>
+        (await db.blogPost.findFirst({ where: { slug, published: true } })) as BlogPostRow | null,
+      null,
+    );
+  },
+  ["blog_post_by_slug"],
+  { tags: [TAGS.blog], revalidate: 3600 },
+);
+export const getBlogPost = (slug: string) => _blogPost(slug);
+
+const _legalPage = unstable_cache(
+  async (slug: string): Promise<LegalPageRow | null> => {
+    return withTimeout<LegalPageRow | null>(
+      async () => (await db.legalPage.findUnique({ where: { slug } })) as LegalPageRow | null,
+      null,
+    );
+  },
+  ["legal_page_by_slug"],
+  { tags: [TAGS.legal], revalidate: 3600 },
+);
+export const getLegalPage = (slug: string) => _legalPage(slug);
