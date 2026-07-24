@@ -81,6 +81,17 @@ export default function SiteSettingsAdmin() {
       {field("cta_subtitle", "Closing CTA subtitle", "textarea")}
 
       <hr className="my-2" />
+      <h2 className="font-serif text-xl text-stone-700">Homepage "Choose Your Piercing Experience" cards</h2>
+      <div>
+        <span className="text-sm font-medium">Kids card image (Little Stars)</span>
+        <div className="mt-1"><ImageUpload value={s.home_piercing_kids_image} onChange={(url) => setS({ ...s, home_piercing_kids_image: url })} /></div>
+      </div>
+      <div>
+        <span className="text-sm font-medium">Adults card image (For everyone)</span>
+        <div className="mt-1"><ImageUpload value={s.home_piercing_adults_image} onChange={(url) => setS({ ...s, home_piercing_adults_image: url })} /></div>
+      </div>
+
+      <hr className="my-2" />
       <h2 className="font-serif text-xl text-stone-700">Contact</h2>
       {field("address", "Address", "textarea")}
       {field("email", "Email")}

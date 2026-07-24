@@ -222,7 +222,7 @@ export function PageContent({ settings, artists, categories, studio, reviews, vi
 
             <div className="relative mx-auto mt-6 mb-8 w-[78%] aspect-square rounded-full overflow-hidden ring-1 ring-pink-200/70 shadow-md bg-pink-100">
               <Image
-                src="/assets/photos/tattoo-7.jpeg"
+                src={settings?.home_piercing_kids_image || "/assets/photos/tattoo-7.jpeg"}
                 alt="Piercing for children"
                 fill
                 className="object-cover"
@@ -278,7 +278,7 @@ export function PageContent({ settings, artists, categories, studio, reviews, vi
 
             <div className="relative mx-auto mt-6 mb-8 w-[78%] aspect-square rounded-full overflow-hidden ring-1 ring-violet-200/70 shadow-md bg-violet-100">
               <Image
-                src="/assets/photos/tattoo-4.jpeg"
+                src={settings?.home_piercing_adults_image || "/assets/photos/tattoo-4.jpeg"}
                 alt="Piercing for adults"
                 fill
                 className="object-cover"
