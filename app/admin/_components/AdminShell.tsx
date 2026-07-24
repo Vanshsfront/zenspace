@@ -9,30 +9,30 @@ const NAV_GROUPS: { group: string; items: { href: string; label: string; exact?:
   {
     group: "Home page",
     items: [
-      { href: "/admin", label: "Hero, CTA & contact", exact: true },
-      { href: "/admin/studio", label: "Studio strip photos" },
-      { href: "/admin/videos", label: "Short-form videos" },
+      { href: "/admin", label: "Hero, CTA & piercing cards", exact: true },
+      { href: "/admin/studio", label: "‘Create your story’ strip" },
+      { href: "/admin/videos", label: "‘Watch us at work’ videos" },
     ],
   },
   {
     group: "Piercing",
     items: [
-      { href: "/admin/piercing-content", label: "Kids & Adults content" },
-      { href: "/admin/piercing", label: "Piercing gallery" },
+      { href: "/admin/piercing-content", label: "Kids & Adults copy" },
+      { href: "/admin/piercing", label: "Kids & Adults galleries" },
       { href: "/admin/earrings", label: "Earring categories" },
       { href: "/admin/safety-items", label: "What makes us safe" },
     ],
   },
   {
-    group: "Booking forms",
-    items: [
-      { href: "/admin/service-forms", label: "Forms & fields" },
-      { href: "/admin/submissions", label: "Submissions" },
-    ],
+    group: "About page",
+    items: [{ href: "/admin/about", label: "About page" }],
   },
   {
-    group: "About",
-    items: [{ href: "/admin/about", label: "About page" }],
+    group: "Blog & legal",
+    items: [
+      { href: "/admin/blog", label: "Blog posts" },
+      { href: "/admin/legal", label: "Terms & Privacy" },
+    ],
   },
   {
     group: "Work & people",
@@ -47,6 +47,17 @@ const NAV_GROUPS: { group: string; items: { href: string; label: string; exact?:
       { href: "/admin/reviews", label: "Reviews" },
       { href: "/admin/custom-requests", label: "Custom requests" },
     ],
+  },
+  {
+    group: "Booking forms",
+    items: [
+      { href: "/admin/service-forms", label: "Forms & fields" },
+      { href: "/admin/submissions", label: "Submissions" },
+    ],
+  },
+  {
+    group: "Site-wide",
+    items: [{ href: "/admin", label: "Contact, social & password", exact: true }],
   },
 ];
 

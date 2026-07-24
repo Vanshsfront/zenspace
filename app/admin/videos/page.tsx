@@ -4,7 +4,7 @@ import { CrudList } from "../CrudList";
 export default function Page() {
   return (
     <div className="max-w-5xl">
-      <h1 className="font-serif text-3xl mb-2">Short-form videos</h1>
+      <h1 className="font-serif text-3xl mb-2">Home → ‘Watch us at work’</h1>
       <p className="text-stone-600 mb-6">
         Vertical (9:16) clips shown in the home-page "Watch us at work" strip. They autoplay
         muted when scrolled into view. Add a poster image for a clean first frame.

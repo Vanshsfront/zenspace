@@ -7,7 +7,7 @@ export default function Page() {
   const [reloadKey, setReloadKey] = useState(0);
   return (
     <div className="max-w-5xl">
-      <h1 className="font-serif text-3xl mb-2">Studio photos</h1>
+      <h1 className="font-serif text-3xl mb-2">Home → ‘A place where we create your story’</h1>
       <p className="text-stone-600 mb-6">Photos that scroll in the home-page "A place where we create your story" carousel.</p>
 
       <div className="mb-8">
