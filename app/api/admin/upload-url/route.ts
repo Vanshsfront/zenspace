@@ -15,7 +15,10 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "filename required" }, { status: 400 });
   }
   const safe = filename.replace(/[^a-zA-Z0-9.\-_]/g, "_");
-  const path = `${Date.now()}-${safe}`;
+  // Random suffix so a bulk upload of identically-named files within the same
+  // millisecond can't collide on the storage path.
+  const rand = Math.random().toString(36).slice(2, 8);
+  const path = `${Date.now()}-${rand}-${safe}`;
   const sb = createServiceClient();
   const { data, error } = await sb.storage.from("media").createSignedUploadUrl(path);
   if (error || !data) {

@@ -13,6 +13,7 @@ export function LegalForm({ initial }: { initial: { id: string; title: string; b
   const [saving, setSaving] = useState(false);
 
   async function save() {
+    if (!title.trim()) { toast.push("error", "Title is required"); return; }
     setSaving(true);
     const r = await fetch("/api/admin/legal_pages", {
       method: "PATCH",
