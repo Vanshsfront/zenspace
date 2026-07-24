@@ -9,7 +9,7 @@ const NAV_GROUPS: { group: string; items: { href: string; label: string; exact?:
   {
     group: "Home page",
     items: [
-      { href: "/admin", label: "Hero, CTA & piercing cards", exact: true },
+      { href: "/admin", label: "Hero, CTA, contact & social", exact: true },
       { href: "/admin/studio", label: "‘Create your story’ strip" },
       { href: "/admin/videos", label: "‘Watch us at work’ videos" },
     ],
@@ -54,10 +54,6 @@ const NAV_GROUPS: { group: string; items: { href: string; label: string; exact?:
       { href: "/admin/service-forms", label: "Forms & fields" },
       { href: "/admin/submissions", label: "Submissions" },
     ],
-  },
-  {
-    group: "Site-wide",
-    items: [{ href: "/admin", label: "Contact, social & password", exact: true }],
   },
 ];
 
