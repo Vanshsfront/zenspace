@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { uploadMedia } from "@/lib/uploadMedia";
 
 export function ImageUpload({ value, onChange }: { value?: string | null; onChange: (url: string) => void }) {
   const [busy, setBusy] = useState(false);
@@ -7,13 +8,14 @@ export function ImageUpload({ value, onChange }: { value?: string | null; onChan
     const f = e.target.files?.[0];
     if (!f) return;
     setBusy(true);
-    const fd = new FormData();
-    fd.append("file", f);
-    const r = await fetch("/api/admin/upload", { method: "POST", body: fd });
-    const j = await r.json();
-    if (j.url) onChange(j.url);
-    else alert(j.error);
-    setBusy(false);
+    try {
+      const url = await uploadMedia(f);
+      onChange(url);
+    } catch (err: any) {
+      alert(err?.message || "Upload failed");
+    } finally {
+      setBusy(false);
+    }
   }
   return (
     <div className="flex items-center gap-3">

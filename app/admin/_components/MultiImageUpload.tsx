@@ -2,6 +2,7 @@
 
 import { useCallback, useState } from "react";
 import { useDropzone } from "react-dropzone";
+import { uploadMedia } from "@/lib/uploadMedia";
 import { Upload, X } from "lucide-react";
 import { useToast } from "./Toast";
 
@@ -26,10 +27,10 @@ type Props = {
 };
 
 /**
- * Drag-and-drop multi-image uploader. Uploads each file to /api/admin/upload
- * (Supabase storage via service role), then POSTs a row to /api/admin/[table]
- * with the public URL + any extraFields. Per-file progress; failures don't
- * block the others; toast feedback on completion.
+ * Drag-and-drop multi-image uploader. Uploads each file via a signed direct
+ * upload (uploadMedia) straight to Supabase Storage, then POSTs a row to
+ * /api/admin/[table] with the public URL + any extraFields. Per-file
+ * progress; failures don't block the others; toast feedback on completion.
  */
 export function MultiImageUpload({ table, extraFields, onUploaded, photoField = "photo" }: Props) {
   const [files, setFiles] = useState<FileState[]>([]);
@@ -43,23 +44,19 @@ export function MultiImageUpload({ table, extraFields, onUploaded, photoField = 
       queued.map(async (state) => {
         setFiles((prev) => prev.map((f) => (f.id === state.id ? { ...f, status: "uploading" } : f)));
         try {
-          const fd = new FormData();
-          fd.append("file", state.file);
-          const r = await fetch("/api/admin/upload", { method: "POST", body: fd });
-          const j = await r.json();
-          if (!r.ok || !j.url) throw new Error(j.error || "Upload failed");
+          const url = await uploadMedia(state.file);
 
           // Insert the row in the target table.
           const create = await fetch(`/api/admin/${table}`, {
             method: "POST",
-            body: JSON.stringify({ ...(extraFields || {}), [photoField]: j.url }),
+            body: JSON.stringify({ ...(extraFields || {}), [photoField]: url }),
           });
           if (!create.ok) {
             const cj = await create.json().catch(() => ({}));
             throw new Error(cj.error || "Saved upload but row insert failed");
           }
 
-          setFiles((prev) => prev.map((f) => (f.id === state.id ? { ...f, status: "done", url: j.url } : f)));
+          setFiles((prev) => prev.map((f) => (f.id === state.id ? { ...f, status: "done", url } : f)));
           successCount++;
         } catch (e: any) {
           setFiles((prev) =>

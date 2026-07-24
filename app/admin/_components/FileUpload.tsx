@@ -1,10 +1,11 @@
 "use client";
 import { useState } from "react";
+import { uploadMedia } from "@/lib/uploadMedia";
 
 /**
- * Generic file uploader (video, PDF, etc.) — same /api/admin/upload endpoint
- * as ImageUpload, but accepts non-image types and shows a filename/preview
- * appropriate to the kind instead of an <img>.
+ * Generic file uploader (video, PDF, etc.) — same signed direct upload via
+ * uploadMedia as ImageUpload, but accepts non-image types and shows a
+ * filename/preview appropriate to the kind instead of an <img>.
  */
 export function FileUpload({
   value,
@@ -23,13 +24,14 @@ export function FileUpload({
     const f = e.target.files?.[0];
     if (!f) return;
     setBusy(true);
-    const fd = new FormData();
-    fd.append("file", f);
-    const r = await fetch("/api/admin/upload", { method: "POST", body: fd });
-    const j = await r.json();
-    if (j.url) onChange(j.url);
-    else alert(j.error);
-    setBusy(false);
+    try {
+      const url = await uploadMedia(f);
+      onChange(url);
+    } catch (err: any) {
+      alert(err?.message || "Upload failed");
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
