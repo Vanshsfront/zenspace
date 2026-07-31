@@ -17,9 +17,6 @@ const STAGGER_CHILD = {
   show: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] as const } },
 };
 
-/** Stand-in for a freshly added work, since portfolio_items.photo is NOT NULL. */
-const NEW_WORK_PHOTO = "/assets/photos/tattoo-1.jpeg";
-
 interface ArtistProfileProps {
   /** The artist row id. Every field on this page writes back to it. */
   id: string;
@@ -120,7 +117,8 @@ export function ArtistProfileContent({ id, name, role, experience, specialty, bi
               <EditableCollection
                 table="portfolio_items"
                 items={works}
-                newItem={{ artist_id: id, photo: NEW_WORK_PHOTO }}
+                newItem={{ artist_id: id }}
+                uploadColumn="photo"
                 addLabel="Add work"
                 itemLabel="photo"
               >

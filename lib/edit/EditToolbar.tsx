@@ -2,6 +2,7 @@
 
 import { AlertCircle, Check, Loader2, PencilLine, Settings2, X } from "lucide-react";
 import { useEditContext } from "./context";
+import { endEditingSession } from "./session";
 
 /**
  * The only chrome edit mode adds. Fixed to the bottom-left so it never sits
@@ -15,6 +16,9 @@ export function EditToolbar() {
   const { state, error } = edit;
 
   function exit() {
+    // Ending the session first, or the boot would read the stored flag on the
+    // next page and put the editor straight back.
+    endEditingSession();
     // A full navigation rather than router.replace: dropping ?edit=1 should give
     // back the same static page a visitor gets, editor JS and all unmounted.
     const url = new URL(window.location.href);

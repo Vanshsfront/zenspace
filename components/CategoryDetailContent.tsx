@@ -19,9 +19,6 @@ const STAGGER_CONTAINER = {
   show: { opacity: 1, transition: { staggerChildren: 0.1 } },
 };
 
-/** Stand-in for a freshly added photo, since category_photos.photo is NOT NULL. */
-const NEW_CATEGORY_PHOTO = "/assets/photos/tattoo-1.jpeg";
-
 type Photo = { id: string; photo: string; caption: string | null };
 
 export function CategoryDetailContent({
@@ -93,7 +90,8 @@ export function CategoryDetailContent({
             <EditableCollection
               table="category_photos"
               items={photos}
-              newItem={{ category_id: id, photo: NEW_CATEGORY_PHOTO }}
+              newItem={{ category_id: id }}
+              uploadColumn="photo"
               addLabel="Add photo"
               itemLabel="photo"
             >

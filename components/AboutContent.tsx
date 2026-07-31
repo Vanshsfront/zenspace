@@ -159,9 +159,10 @@ export function AboutContent({
               <EditableCollection
                 table="studio_photos"
                 items={studio}
-                // photo is NOT NULL, so a new row needs something to show until
-                // it is replaced.
-                newItem={{ photo: FALLBACK_STUDIO_PHOTOS[0] }}
+                // photo is NOT NULL, so uploadColumn makes the file come first
+                // and the row is created with the real URL already in it.
+                newItem={{}}
+                uploadColumn="photo"
                 addLabel="Add studio photo"
                 itemLabel="photo"
               >

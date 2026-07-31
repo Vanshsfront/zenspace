@@ -32,6 +32,19 @@ export type EditableCollectionProps<T extends CollectionItem> = {
   addLabel?: string;
   /** What one row is called in the delete confirmation, e.g. "photo". */
   itemLabel?: string;
+  /**
+   * For galleries whose media column is NOT NULL. Names that column, and makes
+   * the add affordance pick a file, upload it, and create the row with the real
+   * URL already in place.
+   *
+   * Without it a new row has to be created with a placeholder image and then
+   * corrected, which publishes a photo the studio never chose to the live site
+   * in between. The column cannot simply be left empty because the database
+   * rejects it.
+   */
+  uploadColumn?: string;
+  /** What the file picker accepts. Defaults to images. */
+  uploadKind?: "image" | "video";
   children: (item: T, index: number) => ReactNode;
 };
 
@@ -41,6 +54,8 @@ export function EditableCollection<T extends CollectionItem>({
   newItem,
   addLabel,
   itemLabel,
+  uploadColumn,
+  uploadKind,
   children,
 }: EditableCollectionProps<T>) {
   const editing = useEditMode();
@@ -71,6 +86,8 @@ export function EditableCollection<T extends CollectionItem>({
         newItem={newItem}
         addLabel={addLabel}
         itemLabel={itemLabel}
+        uploadColumn={uploadColumn}
+        uploadKind={uploadKind}
         render={children as (item: CollectionItem, index: number) => ReactNode}
       />
     </Suspense>

@@ -2,8 +2,10 @@
 
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
-import { GripVertical, Plus, Trash2 } from "lucide-react";
+import { GripVertical, Loader2, Plus, Trash2 } from "lucide-react";
 import { useAnchorRect, useHostTarget } from "./anchor";
+import { useEditContext } from "./context";
+import { uploadMediaLazy } from "./uploadLazy";
 import { useRowMutations } from "./useSave";
 import type { CollectionItem } from "./EditableCollection";
 
@@ -23,6 +25,8 @@ type Props = {
   newItem?: Record<string, unknown>;
   addLabel?: string;
   itemLabel?: string;
+  uploadColumn?: string;
+  uploadKind?: "image" | "video";
   render: (item: CollectionItem, index: number) => ReactNode;
 };
 
@@ -32,9 +36,14 @@ export default function EditableCollectionLive({
   newItem,
   addLabel = "Add",
   itemLabel = "item",
+  uploadColumn,
+  uploadKind = "image",
   render,
 }: Props) {
   const { create, remove, reorder } = useRowMutations();
+  const edit = useEditContext();
+  const fileInput = useRef<HTMLInputElement | null>(null);
+  const [adding, setAdding] = useState(false);
   // Local order so a drag lands instantly; the server order takes over again on
   // the next render after router.refresh().
   const [order, setOrder] = useState<string[]>(() => items.map((i) => i.id));
@@ -71,6 +80,30 @@ export default function EditableCollectionLive({
     [order, reorder, table]
   );
 
+  const onPickedFile = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      e.target.value = ""; // let the same file be chosen again after a failure
+      if (!file || !uploadColumn) return;
+      setAdding(true);
+      const settle = edit?.beginSave();
+      try {
+        const url = await uploadMediaLazy(file);
+        settle?.();
+        await create(table, {
+          ...(newItem ?? {}),
+          [uploadColumn]: url,
+          sort_order: ordered.length,
+        });
+      } catch (err) {
+        settle?.(err instanceof Error ? err.message : "Upload failed");
+      } finally {
+        setAdding(false);
+      }
+    },
+    [create, edit, newItem, ordered.length, table, uploadColumn]
+  );
+
   const onDelete = useCallback(
     (id: string) => {
       // Deletes cascade (a category takes its photos with it) so they can't be
@@ -100,15 +133,28 @@ export default function EditableCollectionLive({
           {render(item, index)}
         </CollectionItemShell>
       ))}
+      {uploadColumn && (
+        <input
+          ref={fileInput}
+          type="file"
+          accept={uploadKind === "video" ? "video/*" : "image/*"}
+          onChange={onPickedFile}
+          className="hidden"
+        />
+      )}
       <button
         type="button"
-        onClick={() =>
-          void create(table, { ...(newItem ?? {}), sort_order: ordered.length })
-        }
-        className="min-h-[8rem] w-full flex flex-col items-center justify-center gap-2 rounded-[1.5rem] border-2 border-dashed border-stone-300 text-stone-500 hover:border-stone-500 hover:text-stone-700 transition-colors"
+        disabled={adding}
+        onClick={() => {
+          // With a media column the file comes first: the row is only created
+          // once there is a real URL for it, so nothing half-made is ever live.
+          if (uploadColumn) fileInput.current?.click();
+          else void create(table, { ...(newItem ?? {}), sort_order: ordered.length });
+        }}
+        className="min-h-[8rem] w-full flex flex-col items-center justify-center gap-2 rounded-[1.5rem] border-2 border-dashed border-stone-300 text-stone-500 hover:border-stone-500 hover:text-stone-700 transition-colors disabled:opacity-60"
       >
-        <Plus size={22} />
-        <span className="text-sm font-medium">{addLabel}</span>
+        {adding ? <Loader2 size={22} className="animate-spin" /> : <Plus size={22} />}
+        <span className="text-sm font-medium">{adding ? "Uploading…" : addLabel}</span>
       </button>
     </>
   );

@@ -49,13 +49,6 @@ const WA_MESSAGE = {
   adults: "Hi Zenspace, I'd like to book a piercing.",
 } as const;
 
-/**
- * piercing_photos.photo is NOT NULL, so the "add a photo" affordance has to
- * create the row with something already in the column. This local asset is a
- * stand-in the admin swaps out with Replace the moment the new card appears.
- */
-const NEW_PHOTO_PLACEHOLDER = "/assets/photos/studio-1.png";
-
 const COPY = {
   kids: {
     title: "Piercings for Little Stars",
@@ -254,7 +247,8 @@ export function PiercingAudienceContent({
               <EditableCollection
                 table="piercing_photos"
                 items={photos}
-                newItem={{ audience, photo: NEW_PHOTO_PLACEHOLDER }}
+                newItem={{ audience }}
+                uploadColumn="photo"
                 addLabel="Add a photo"
                 itemLabel="photo"
               >
