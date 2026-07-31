@@ -69,10 +69,13 @@ export function VideoCarousel({ videos }: { videos: Video[] }) {
         <EditableCollection
           table="short_videos"
           items={videos}
-          // video is NOT NULL, so a new row cannot start empty and there is no
-          // placeholder clip to point it at. It starts as a copy of the first
-          // card and the admin swaps the file with Replace.
-          newItem={{ video: videos[0]?.video }}
+          // video is NOT NULL. This used to seed a new row with a copy of the
+          // first card's URL, which failed outright when there were no cards to
+          // copy from: the create sent video: undefined and the database
+          // rejected it, so the very first video could never be added. The file
+          // is uploaded first now and the row is created with its real URL.
+          uploadColumn="video"
+          uploadKind="video"
           addLabel="Add video"
           itemLabel="video"
         >

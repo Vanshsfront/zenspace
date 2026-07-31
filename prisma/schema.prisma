@@ -54,6 +54,7 @@ model SiteSettings {
 // server's direct Prisma connection (which bypasses RLS) can read/write it.
 model AdminAuth {
   id       Int    @id @default(1)
+  username String @default("Zenspace123")
   password String @default("zenspace123098#")
 
   @@map("admin_auth")

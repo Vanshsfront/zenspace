@@ -39,9 +39,12 @@ update site_settings set google_reviews_url = 'https://share.google/pSxgjeACR2Lh
 -- which bypasses RLS.
 create table if not exists admin_auth (
   id int primary key default 1,
+  username text not null default 'Zenspace123',
   password text not null default 'zenspace123098#',
   constraint admin_auth_single_row check (id = 1)
 );
+-- Added after the table shipped, so existing databases need the column too.
+alter table admin_auth add column if not exists username text not null default 'Zenspace123';
 insert into admin_auth (id) values (1) on conflict do nothing;
 alter table admin_auth enable row level security;
 -- No policies = anon/authenticated (PostgREST) get zero rows. Revoke as well so

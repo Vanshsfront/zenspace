@@ -13,18 +13,28 @@ async function guard() {
 export async function POST(req: Request) {
   if (!(await guard())) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
-  const { password } = await req.json().catch(() => ({}));
-  const next = typeof password === "string" ? password.trim() : "";
-  if (!next) return NextResponse.json({ error: "Password cannot be blank" }, { status: 400 });
+  const { username, password } = await req.json().catch(() => ({}));
+  const nextPassword = typeof password === "string" ? password.trim() : "";
+  const nextUsername = typeof username === "string" ? username.trim() : "";
+
+  // Either can be changed on its own, so a blank field means "leave this one
+  // alone" rather than "set it to empty", which would lock the owner out.
+  if (!nextPassword && !nextUsername) {
+    return NextResponse.json({ error: "Enter a new username or password" }, { status: 400 });
+  }
+
+  const data: Record<string, string> = {};
+  if (nextPassword) data.password = nextPassword;
+  if (nextUsername) data.username = nextUsername;
 
   try {
     await (prisma as any).adminAuth.upsert({
       where: { id: 1 },
-      create: { id: 1, password: next },
-      update: { password: next },
+      create: { id: 1, ...data },
+      update: data,
     });
     return NextResponse.json({ ok: true });
   } catch (e: any) {
-    return NextResponse.json({ error: e?.message || "Could not update password" }, { status: 500 });
+    return NextResponse.json({ error: e?.message || "Could not update the login" }, { status: 500 });
   }
 }
