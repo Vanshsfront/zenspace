@@ -2,6 +2,21 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
+/**
+ * Where to go after signing in.
+ *
+ * Read off window.location rather than useSearchParams so this page keeps
+ * prerendering without a Suspense boundary. Only a same-origin absolute path is
+ * accepted: anything starting "//" is protocol-relative and would send the admin
+ * to another host, which is an open redirect on a login form.
+ */
+function nextPath(): string {
+  if (typeof window === "undefined") return "/admin";
+  const raw = new URLSearchParams(window.location.search).get("next");
+  if (!raw || !raw.startsWith("/") || raw.startsWith("//")) return "/admin";
+  return raw;
+}
+
 export default function LoginPage() {
   const [pw, setPw] = useState("");
   const [err, setErr] = useState("");
@@ -9,7 +24,9 @@ export default function LoginPage() {
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     const r = await fetch("/api/admin/login", { method: "POST", body: JSON.stringify({ password: pw }) });
-    if (r.ok) router.push("/admin");
+    // Returns to the page that was being edited, ?edit=1 and all, so a session
+    // expiring mid-edit does not also cost the admin their place.
+    if (r.ok) router.push(nextPath());
     else setErr("Wrong password");
   }
   return (

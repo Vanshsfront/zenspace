@@ -55,11 +55,18 @@ export default function EditableCollectionLive({
       const sourceId = dragging.current;
       dragging.current = null;
       if (!sourceId || sourceId === targetId) return;
+      const before = order;
       const next = order.filter((id) => id !== sourceId);
       const at = next.indexOf(targetId);
       next.splice(at < 0 ? next.length : at, 0, sourceId);
       setOrder(next);
-      void reorder(table, next);
+      void reorder(table, next).then((ok) => {
+        // Put the old order back rather than leaving the screen showing an
+        // arrangement the database never accepted. reorder() also refreshes on
+        // failure, so a partially applied order resolves to the server's truth
+        // on the next render.
+        if (!ok) setOrder(before);
+      });
     },
     [order, reorder, table]
   );
@@ -70,10 +77,15 @@ export default function EditableCollectionLive({
       // undone by re-creating the row. Ask first instead of offering an Undo
       // that would quietly lose data.
       if (!window.confirm(`Delete this ${itemLabel}? This cannot be undone.`)) return;
+      const before = order;
       setOrder((prev) => prev.filter((x) => x !== id));
-      void remove(table, id);
+      void remove(table, id).then((ok) => {
+        // A failed delete used to leave the row gone from the screen while it was
+        // still in the database, until a hard reload.
+        if (!ok) setOrder(before);
+      });
     },
-    [itemLabel, remove, table]
+    [itemLabel, order, remove, table]
   );
 
   return (

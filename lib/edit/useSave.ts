@@ -22,6 +22,18 @@ function isSingleton(table: string): boolean {
   return table === "site_settings";
 }
 
+/**
+ * A lapsed admin session, kept distinct from a validation failure. The two need
+ * opposite responses: one wants the value fixed, the other wants a fresh login,
+ * and collapsing both into "Save failed" left the admin typing into a dead page.
+ */
+export class SessionExpiredError extends Error {
+  constructor() {
+    super("Your admin session has expired");
+    this.name = "SessionExpiredError";
+  }
+}
+
 async function request(
   method: "POST" | "PATCH" | "DELETE",
   table: string,
@@ -32,11 +44,23 @@ async function request(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
+  if (r.status === 401) throw new SessionExpiredError();
   if (!r.ok) {
     const j = (await r.json().catch(() => ({}))) as { error?: string };
     throw new Error(j.error || `Save failed (${r.status})`);
   }
   return r.json().catch(() => ({}));
+}
+
+/** Settles a failed write, routing a lapsed session to the banner. */
+function reportFailure(
+  edit: ReturnType<typeof useEditContext>,
+  settle: ((error?: string | null) => void) | undefined,
+  e: unknown,
+  fallback: string
+) {
+  if (e instanceof SessionExpiredError) edit?.reportSessionExpired();
+  settle?.(e instanceof Error ? e.message : fallback);
 }
 
 export type PatchArgs = {
@@ -80,7 +104,7 @@ export function useRowPatch() {
               undoSettle?.();
               router.refresh();
             } catch (e) {
-              undoSettle?.(e instanceof Error ? e.message : "Could not undo");
+              reportFailure(edit, undoSettle, e, "Could not undo");
             }
           });
         }
@@ -89,7 +113,7 @@ export function useRowPatch() {
         router.refresh();
         return true;
       } catch (e) {
-        settle?.(e instanceof Error ? e.message : "Save failed");
+        reportFailure(edit, settle, e, "Save failed");
         return false;
       }
     },
@@ -221,7 +245,7 @@ export function useRowMutations() {
         router.refresh();
         return true;
       } catch (e) {
-        settle?.(e instanceof Error ? e.message : "Could not add");
+        reportFailure(edit, settle, e, "Could not add");
         return false;
       }
     },
@@ -237,28 +261,43 @@ export function useRowMutations() {
         router.refresh();
         return true;
       } catch (e) {
-        settle?.(e instanceof Error ? e.message : "Could not delete");
+        reportFailure(edit, settle, e, "Could not delete");
+        // The caller puts its optimistic removal back, but that snapshot is
+        // taken per call: two deletes failing out of order would settle on a
+        // list the database never had. Refreshing makes the server the
+        // authority and the local revert merely the fast path.
+        router.refresh();
         return false;
       }
     },
     [edit, router]
   );
 
-  /** Writes sort_order for every row whose position changed. */
+  /**
+   * Writes sort_order for every row in the list, not only the ones that moved:
+   * a reorder renumbers the whole sequence, and sending the full set is what
+   * keeps the positions dense and collision-free.
+   *
+   * The writes are independent, so a failure part-way leaves the table in a
+   * half-applied order. allSettled rather than all, so the rest still land and
+   * the refresh below shows what the database actually holds instead of the
+   * order the drag hoped for.
+   */
   const reorder = useCallback(
     async (table: string, ids: string[]): Promise<boolean> => {
       const settle = edit?.beginSave();
-      try {
-        await Promise.all(
-          ids.map((id, index) => request("PATCH", table, { id, sort_order: index }))
-        );
-        settle?.();
+      const results = await Promise.allSettled(
+        ids.map((id, index) => request("PATCH", table, { id, sort_order: index }))
+      );
+      const failure = results.find((r) => r.status === "rejected");
+      if (failure) {
+        reportFailure(edit, settle, failure.reason, "Could not save the new order");
         router.refresh();
-        return true;
-      } catch (e) {
-        settle?.(e instanceof Error ? e.message : "Could not save the new order");
         return false;
       }
+      settle?.();
+      router.refresh();
+      return true;
     },
     [edit, router]
   );

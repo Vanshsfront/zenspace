@@ -5,12 +5,34 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { Baby, MessageCircle, Phone as PhoneIcon, Sparkles, Gem, ShieldCheck, Smile, UserCircle2, ArrowRight } from "lucide-react";
 import { whatsappHref } from "@/lib/whatsapp";
-import type { SiteSettings, PiercingPhoto, EarringCategoryRow, SafetyItemRow } from "@/lib/data";
+import type { SiteSettings, PiercingPhoto, EarringCategoryRow } from "@/lib/data";
 import { useEditMode } from "@/lib/edit/context";
 import { EditableText } from "@/lib/edit/EditableText";
 import { EditableImage } from "@/lib/edit/EditableImage";
 import { EditableCollection } from "@/lib/edit/EditableCollection";
-import { SafetyItems } from "./SafetyItems";
+import { SafetyItems, type SafetyItemCard } from "./SafetyItems";
+
+/**
+ * This is a client component, so whatever it is handed is serialized into the
+ * flight payload of both prerendered piercing pages on top of the HTML it
+ * already produced. These three types are the exact set of columns the JSX
+ * below reads; the pages project their rows down to them before handing them
+ * over. site_settings is the worst offender if passed whole: thirty columns of
+ * which six are read here.
+ */
+export type PiercingSettings = Pick<
+  SiteSettings,
+  | "piercing_kids_title"
+  | "piercing_kids_intro"
+  | "piercing_adults_title"
+  | "piercing_adults_intro"
+  | "whatsapp"
+  | "phone"
+>;
+/** audience is dropped: the query already filtered on it and new rows take it from the route. */
+export type PiercingPhotoCard = Pick<PiercingPhoto, "id" | "photo" | "caption">;
+/** slug is read (it is the card's href), audience and sort_order are not. */
+export type EarringCategoryCard = Pick<EarringCategoryRow, "id" | "slug" | "name" | "photo" | "description">;
 
 const STAGGER_CONTAINER = {
   hidden: { opacity: 0 },
@@ -71,10 +93,10 @@ export function PiercingAudienceContent({
   safetyItems,
 }: {
   audience: "kids" | "adults";
-  settings: SiteSettings | null;
-  photos: PiercingPhoto[];
-  earringCategories: EarringCategoryRow[];
-  safetyItems: SafetyItemRow[];
+  settings: PiercingSettings | null;
+  photos: PiercingPhotoCard[];
+  earringCategories: EarringCategoryCard[];
+  safetyItems: SafetyItemCard[];
 }) {
   const c = COPY[audience];
   const editing = useEditMode();

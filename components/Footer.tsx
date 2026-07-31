@@ -6,7 +6,21 @@ import type { SiteSettings } from "@/lib/data";
 import { EditableText } from "@/lib/edit/EditableText";
 import { useEditMode } from "@/lib/edit/context";
 
-export function Footer({ settings }: { settings: SiteSettings | null }) {
+/**
+ * The seven site_settings columns the footer actually reads, including the four
+ * that only surface in edit mode. It is deliberately not `SiteSettings`: this is
+ * a client component, so whatever the server layout hands it is serialised into
+ * the RSC payload of every (site) page. Passing the whole row put about_body,
+ * aftercare_pdf and the rest of the piercing copy into the HTML of pages that
+ * never render a word of it. Pick from SiteSettings so a renamed column still
+ * fails the build here.
+ */
+export type FooterSettings = Pick<
+  SiteSettings,
+  "address" | "email" | "phone" | "whatsapp" | "facebook" | "instagram" | "pinterest"
+>;
+
+export function Footer({ settings }: { settings: FooterSettings | null }) {
   const s = settings;
   // The footer is a client component only so it can ask this. Several
   // site_settings columns are never rendered as text anywhere on the site — they

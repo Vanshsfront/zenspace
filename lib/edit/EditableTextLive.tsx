@@ -35,6 +35,12 @@ type Props = {
   max: number;
   label: string;
   multiline: boolean;
+  /**
+   * Digits only. google_review_count is an Int column, and letters typed here
+   * were coerced to null by the API, silently blanking the value and dropping
+   * the page back to its hardcoded fallback with nothing to show what happened.
+   */
+  numeric?: boolean;
 };
 
 /** Inserts text at the caret, replacing the selection. */
@@ -83,6 +89,7 @@ export default function EditableTextLive({
   max,
   label,
   multiline,
+  numeric,
 }: Props) {
   const { value: saved, edit, flush, reset } = useFieldSave({ table, id, field, value, label });
   const ref = useRef<HTMLElement | null>(null);
@@ -106,18 +113,24 @@ export default function EditableTextLive({
 
   const onBeforeInput = useCallback(
     (e: FormEvent<HTMLElement>) => {
-      if (max <= 0) return;
       const el = ref.current;
       if (!el) return;
       const native = e.nativeEvent as InputEvent;
       const inserted = native.data ?? "";
       if (!inserted) return; // deletions and IME composition starts are always fine
+      // Checked before the cap, so a number field stays digits-only even when
+      // the registry gives it no length limit.
+      if (numeric && /\D/.test(inserted)) {
+        e.preventDefault();
+        return;
+      }
+      if (max <= 0) return;
       const current = readText(el, multiline).length;
       // Refuse the keystroke outright rather than truncating afterwards, so the
       // counter can never show a number above the cap.
       if (current - selectionLength(el) + inserted.length > max) e.preventDefault();
     },
-    [max, multiline]
+    [max, multiline, numeric]
   );
 
   const onPaste = useCallback(
@@ -126,6 +139,7 @@ export default function EditableTextLive({
       if (!el) return;
       e.preventDefault();
       let text = e.clipboardData.getData("text/plain");
+      if (numeric) text = text.replace(/\D/g, "");
       if (!multiline) text = text.replace(/\s*\n+\s*/g, " ");
       if (max > 0) {
         const room = max - readText(el, multiline).length + selectionLength(el);
@@ -137,17 +151,26 @@ export default function EditableTextLive({
       setLength(next.length);
       edit(next);
     },
-    [edit, max, multiline]
+    [edit, max, multiline, numeric]
   );
 
   const onInput = useCallback(() => {
     const el = ref.current;
     if (!el) return;
     let next = readText(el, multiline);
-    // Backstop for the input types beforeinput can't refuse (an IME commit, a
-    // drag-and-drop of text). The cap is hard, so trim and move on.
+    // Backstop for the input types beforeinput can't refuse: an IME commit fires
+    // a non-cancelable event, and a text drop carries its payload on
+    // dataTransfer with event.data null, so both slip past the guards there.
+    let corrected = false;
+    if (numeric && /\D/.test(next)) {
+      next = next.replace(/\D/g, "");
+      corrected = true;
+    }
     if (max > 0 && next.length > max) {
       next = next.slice(0, max);
+      corrected = true;
+    }
+    if (corrected) {
       el.textContent = next;
       const range = document.createRange();
       range.selectNodeContents(el);
@@ -158,7 +181,7 @@ export default function EditableTextLive({
     }
     setLength(next.length);
     edit(next);
-  }, [edit, max, multiline]);
+  }, [edit, max, multiline, numeric]);
 
   const onKeyDown = useCallback(
     (e: ReactKeyboardEvent<HTMLElement>) => {

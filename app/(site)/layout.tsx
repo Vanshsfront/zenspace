@@ -25,7 +25,22 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
         categories={categories.map((c) => ({ id: c.id, name: c.name, slug: c.slug }))}
       />
       <main className="flex-1">{children}</main>
-      <Footer settings={settings} />
+      {/* Narrowed to the columns Footer reads. It is a client component, so the
+          whole site_settings row would otherwise be serialised into the RSC
+          payload of every page in the group, not just the ones that use it. */}
+      <Footer
+        settings={
+          settings && {
+            address: settings.address,
+            email: settings.email,
+            phone: settings.phone,
+            whatsapp: settings.whatsapp,
+            facebook: settings.facebook,
+            instagram: settings.instagram,
+            pinterest: settings.pinterest,
+          }
+        }
+      />
       <WhatsAppFab digits={settings?.whatsapp} />
     </EditModeBoot>
   );

@@ -38,6 +38,13 @@ export type EditableTextProps = {
   value?: string;
   /** Allows line breaks. Defaults to true for textarea fields in the registry. */
   multiline?: boolean;
+  /**
+   * Extra classes applied only while editing. For fields whose visitor markup
+   * is built from the column rather than being it: a body split into paragraphs
+   * renders as one flat string in the editor, so it needs whitespace-pre-wrap to
+   * show the blank lines that drive the split. Never reaches a visitor.
+   */
+  editClassName?: string;
 };
 
 export function EditableText({
@@ -50,6 +57,7 @@ export function EditableText({
   children,
   value,
   multiline,
+  editClassName,
 }: EditableTextProps) {
   const editing = useEditMode();
 
@@ -58,6 +66,7 @@ export function EditableText({
 
   const meta = fieldMeta(table, field);
   const text = value ?? (typeof children === "string" ? children : "");
+  const isMultiline = multiline ?? meta?.kind === "textarea";
 
   return (
     <Suspense fallback={<As className={className}>{children}</As>}>
@@ -66,11 +75,22 @@ export function EditableText({
         field={field}
         id={id}
         as={As}
-        className={className}
+        // Editing a multiline field ALWAYS preserves whitespace, whatever the
+        // visitor stylesheet says. The editor reads the element back with
+        // innerText, which reports what is rendered: under white-space:normal a
+        // stored "\n" draws as a space and reading it back returns a space, so
+        // merely focusing and blurring a field like the footer address would
+        // PATCH the flattened text and destroy the line breaks without a single
+        // keystroke. Preserving them here keeps the round trip exact and is also
+        // the only way the admin can see the breaks they are editing.
+        className={[className, isMultiline && "whitespace-pre-wrap", editClassName]
+          .filter(Boolean)
+          .join(" ")}
         value={text}
         max={max ?? meta?.max ?? 0}
         label={meta?.label ?? field}
-        multiline={multiline ?? meta?.kind === "textarea"}
+        multiline={isMultiline}
+        numeric={meta?.kind === "number"}
       />
     </Suspense>
   );

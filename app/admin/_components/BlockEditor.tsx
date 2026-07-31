@@ -2,6 +2,15 @@
 import { ImageUpload } from "../ImageUpload";
 import { ChevronUp, ChevronDown, Trash2, Heading, Type, Image as ImageIcon } from "lucide-react";
 import type { Block } from "@/lib/blocks";
+import { BLOCKS_TABLE, fieldMax } from "@/lib/edit/fields";
+import { CharCount } from "./EntityForm";
+
+// Blocks live in a jsonb column, so the registry files them under a pseudo
+// table. Same caps as the inline block editor on the public routes: a heading
+// typed here has to fit the same page it does when typed there.
+const HEADING_MAX = fieldMax(BLOCKS_TABLE, "heading");
+const PARAGRAPH_MAX = fieldMax(BLOCKS_TABLE, "paragraph");
+const CAPTION_MAX = fieldMax(BLOCKS_TABLE, "caption");
 
 export function BlockEditor({ value, onChange }: { value: Block[]; onChange: (b: Block[]) => void }) {
   const blocks = value || [];
@@ -42,16 +51,27 @@ export function BlockEditor({ value, onChange }: { value: Block[]; onChange: (b:
                 <option value="h2">Large heading (H2)</option>
                 <option value="h3">Small heading (H3)</option>
               </select>
-              <input value={b.text} onChange={(e) => setBlock(i, { text: e.target.value })} placeholder="Heading text" className="w-full px-3 py-2 rounded-lg border bg-white" />
+              <input value={b.text} onChange={(e) => setBlock(i, { text: e.target.value })} maxLength={HEADING_MAX} placeholder="Heading text" className="w-full px-3 py-2 rounded-lg border bg-white" />
+              {HEADING_MAX !== undefined && (
+                <div className="flex justify-end"><CharCount length={b.text.length} max={HEADING_MAX} /></div>
+              )}
             </div>
           )}
           {b.type === "paragraph" && (
-            <textarea value={b.text} onChange={(e) => setBlock(i, { text: e.target.value })} rows={4} placeholder="Paragraph text" className="w-full px-3 py-2 rounded-lg border bg-white" />
+            <div className="space-y-2">
+              <textarea value={b.text} onChange={(e) => setBlock(i, { text: e.target.value })} maxLength={PARAGRAPH_MAX} rows={4} placeholder="Paragraph text" className="w-full px-3 py-2 rounded-lg border bg-white" />
+              {PARAGRAPH_MAX !== undefined && (
+                <div className="flex justify-end"><CharCount length={b.text.length} max={PARAGRAPH_MAX} /></div>
+              )}
+            </div>
           )}
           {b.type === "image" && (
             <div className="space-y-2">
               <ImageUpload value={b.url} onChange={(url) => setBlock(i, { url })} />
-              <input value={b.caption ?? ""} onChange={(e) => setBlock(i, { caption: e.target.value })} placeholder="Caption (optional)" className="w-full px-3 py-2 rounded-lg border bg-white text-sm" />
+              <input value={b.caption ?? ""} onChange={(e) => setBlock(i, { caption: e.target.value })} maxLength={CAPTION_MAX} placeholder="Caption (optional)" className="w-full px-3 py-2 rounded-lg border bg-white text-sm" />
+              {CAPTION_MAX !== undefined && (
+                <div className="flex justify-end"><CharCount length={(b.caption ?? "").length} max={CAPTION_MAX} /></div>
+              )}
             </div>
           )}
         </div>

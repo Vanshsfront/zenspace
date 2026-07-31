@@ -8,11 +8,21 @@ import { EditableImage } from "@/lib/edit/EditableImage";
 import { EditableCollection } from "@/lib/edit/EditableCollection";
 
 /**
+ * Only the four columns this section actually paints. The row's own `audience`
+ * and `sort_order` are never read here — sort_order is already baked into the
+ * order the query returns, and the audience a new row is stamped with comes
+ * from the route, not from a sibling row. Keeping them out of the type is what
+ * lets the page hand over a projection instead of the whole row, so they never
+ * reach the flight payload.
+ */
+export type SafetyItemCard = Pick<SafetyItemRow, "id" | "title" | "body" | "photo">;
+
+/**
  * `audience` is not rendered anywhere. It is here so a row added inline can be
  * stamped with the page it was added from, exactly like the admin screens do —
  * a safety item with the wrong audience simply disappears from both pages.
  */
-export function SafetyItems({ items, audience }: { items: SafetyItemRow[]; audience: "kids" | "adults" }) {
+export function SafetyItems({ items, audience }: { items: SafetyItemCard[]; audience: "kids" | "adults" }) {
   const editing = useEditMode();
   // The whole section disappears when it is empty, which would leave no way to
   // add the first item. In edit mode it stays so the add affordance is reachable.

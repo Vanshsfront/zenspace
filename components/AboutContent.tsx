@@ -124,12 +124,17 @@ export function AboutContent({
               {heading}
             </EditableText>
             {/* One column holds every paragraph, so the whole block is the edit
-                target and `value` carries the raw text the split came from. */}
+                target and `value` carries the raw text the split came from.
+                While editing, the rendered <p> elements give way to that raw
+                text, so it needs pre-wrap: the blank lines between paragraphs
+                are what the split reads, and without it they are invisible and
+                the admin is editing an unstructured blob. */}
             <EditableText
               table="site_settings"
               field="about_body"
               as="div"
               className="space-y-6 text-lg text-stone-600 leading-relaxed"
+              editClassName="whitespace-pre-wrap"
               value={body}
             >
               {paragraphs.map((p, i) => (

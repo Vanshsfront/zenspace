@@ -4,6 +4,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useRef,
   useState,
@@ -40,6 +41,13 @@ type EditContextValue = {
   beginSave: () => (error?: string | null) => void;
   /** Shows the Undo toast for a write that just landed. */
   showUndo: (message: string, onUndo: () => void | Promise<void>) => void;
+  /**
+   * True once a write has come back 401. The admin cookie lasts a week, so this
+   * is what a session running out mid-session looks like: every further edit
+   * would fail the same way with nothing on screen explaining why.
+   */
+  sessionExpired: boolean;
+  reportSessionExpired: () => void;
 };
 
 const EditContext = createContext<EditContextValue | null>(null);
@@ -51,6 +59,7 @@ export function EditProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<SaveState>("idle");
   const [error, setError] = useState<string | null>(null);
   const [undos, setUndos] = useState<UndoItem[]>([]);
+  const [sessionExpired, setSessionExpired] = useState(false);
   const pending = useRef(0);
 
   const beginSave = useCallback(() => {
@@ -67,26 +76,66 @@ export function EditProvider({ children }: { children: ReactNode }) {
         setState("error");
         return;
       }
+      // A write landing proves the session is alive again, which is what happens
+      // when the admin signs back in on another tab. Without this the banner is
+      // a one-way latch that stays pinned over the navbar for the life of the
+      // page even though everything is saving fine.
+      setSessionExpired(false);
       // Leave the indicator on "saving" while anything else is still in flight,
       // otherwise a fast save would report "Saved" over a slow one.
       if (pending.current === 0) setState("saved");
     };
   }, []);
 
+  // Tracked so unmounting the provider (which EditModeBoot does on every
+  // client-side navigation) cannot leave timers firing setUndos on a dead tree.
+  const undoTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
+  useEffect(() => {
+    const timers = undoTimers;
+    return () => {
+      timers.current.forEach(clearTimeout);
+      timers.current = [];
+    };
+  }, []);
+
   const showUndo = useCallback((message: string, onUndo: () => void | Promise<void>) => {
     const id = Date.now() + Math.random();
     setUndos((prev) => [...prev, { id, message, onUndo }]);
-    setTimeout(() => setUndos((prev) => prev.filter((u) => u.id !== id)), UNDO_MS);
+    undoTimers.current.push(
+      setTimeout(() => setUndos((prev) => prev.filter((u) => u.id !== id)), UNDO_MS)
+    );
   }, []);
 
+  const reportSessionExpired = useCallback(() => setSessionExpired(true), []);
+
   const value = useMemo<EditContextValue>(
-    () => ({ state, error, beginSave, showUndo }),
-    [state, error, beginSave, showUndo]
+    () => ({ state, error, beginSave, showUndo, sessionExpired, reportSessionExpired }),
+    [state, error, beginSave, showUndo, sessionExpired, reportSessionExpired]
   );
 
   return (
     <EditContext.Provider value={value}>
       {children}
+      {sessionExpired && (
+        // Without this a lapsed session just turns every keystroke into the word
+        // "unauthorized" in the toolbar, with no way back. The link carries the
+        // current page so signing in returns to what was being edited.
+        <div
+          role="alert"
+          style={{ zIndex: 10002 }}
+          className="fixed inset-x-0 top-0 flex flex-wrap items-center justify-center gap-3 px-4 py-3 bg-amber-500 text-stone-900 text-sm font-medium shadow-lg"
+        >
+          <span>Your admin session has expired, so nothing is being saved.</span>
+          <a
+            href={`/admin-login?next=${encodeURIComponent(
+              typeof window === "undefined" ? "/" : window.location.pathname + window.location.search
+            )}`}
+            className="inline-flex items-center px-3 py-1.5 rounded-lg bg-stone-900 text-stone-50 hover:bg-stone-800"
+          >
+            Sign in again
+          </a>
+        </div>
+      )}
       <div
         role="status"
         aria-live="polite"

@@ -1,5 +1,6 @@
 import { PiercingAudienceContent } from "@/components/PiercingAudienceContent";
 import { getSiteSettings, getPiercingPhotos, getEarringCategories, getSafetyItems } from "@/lib/data";
+import { piercingSettings, piercingPhotoCards, earringCategoryCards, safetyItemCards } from "../_props";
 
 export const metadata = { title: "Piercings for Kids | Zenspace" };
 
@@ -10,5 +11,15 @@ export default async function KidsPiercingPage() {
     getEarringCategories("kids"),
     getSafetyItems("kids"),
   ]);
-  return <PiercingAudienceContent audience="kids" settings={settings} photos={photos} earringCategories={categories} safetyItems={safetyItems} />;
+  // Projected before the client boundary so the unread columns never reach the
+  // flight payload embedded in this page's prerendered HTML.
+  return (
+    <PiercingAudienceContent
+      audience="kids"
+      settings={piercingSettings(settings)}
+      photos={piercingPhotoCards(photos)}
+      earringCategories={earringCategoryCards(categories)}
+      safetyItems={safetyItemCards(safetyItems)}
+    />
+  );
 }

@@ -21,6 +21,21 @@ import { CAPTION_CLASS, H2_CLASS, H3_CLASS, P_CLASS } from "./blockStyles";
  * Only the reading path lives here. The editor is a separate chunk behind the
  * lazy() below, because this module is on the visitor path for three routes and
  * a visitor must not download an editor to read a legal page.
+ *
+ * The `blocks` array reaching a client component means the body travels twice,
+ * once as HTML and once as this component's serialized props. That looks like
+ * something moving the reading path back into a server component would fix, and
+ * it is not: an RSC page always ships its flight payload beside its HTML, so the
+ * body goes twice either way, and the only question is which encoding is
+ * cheaper. Measured on a 6.3 KB body (build output, 16 headings/paragraphs):
+ * as props the second copy is 7.1 KB, because a block is `{"type","text"}`; as a
+ * server-rendered element tree it is 9.4 KB, because every node carries its
+ * className again. Prerendered page totals: 43,324 vs 45,953 bytes of HTML and
+ * 18,853 vs 21,166 bytes of .rsc, the server version larger in both, and still
+ * larger after gzip and with the image block removed. Against that it saves
+ * 1.6 KB of shared, cached JS once, and it would need edit mode to re-fetch the
+ * row over the wire because a server component cannot be told edit mode is on
+ * without cookies(). So this is the smaller of the two, not the larger.
  */
 
 const BlockEditorLive = lazy(() => import("./BlockEditorLive"));

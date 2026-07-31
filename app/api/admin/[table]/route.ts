@@ -3,6 +3,62 @@ import { cookies } from "next/headers";
 import { revalidateTag, revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { TAGS } from "@/lib/data";
+import { BLOCKS_TABLE, fieldMeta } from "@/lib/edit/fields";
+
+/**
+ * Thrown when a value is longer than the registry allows, so the caller gets a
+ * 400 that names the field instead of a Prisma error or a silently broken page.
+ */
+class LimitError extends Error {}
+
+/**
+ * Enforces the registry's character caps on the server.
+ *
+ * Both editing surfaces cap input in the browser, but neither could stop a
+ * value arriving from anywhere else, and the caps exist to keep the layout
+ * intact rather than to be a nicety. Only fields the registry knows about are
+ * checked, so columns with no entry (slugs, urls, jsonb) pass through.
+ */
+function enforceLimits(table: string, data: Record<string, any>): void {
+  for (const [key, value] of Object.entries(data)) {
+    if (key === "blocks" && Array.isArray(value)) {
+      enforceBlockLimits(value);
+      continue;
+    }
+    if (typeof value !== "string") continue;
+    const meta = fieldMeta(table, key);
+    if (!meta || meta.max <= 0) continue;
+    if (value.length > meta.max) {
+      throw new LimitError(
+        `${meta.label} must be ${meta.max} characters or fewer (got ${value.length}).`
+      );
+    }
+  }
+}
+
+/**
+ * The rich-text body is one jsonb column, so its caps live per block type in the
+ * registry under BLOCKS_TABLE rather than per column. Both editors read them;
+ * without this walk the server enforced nothing at all for blog posts and legal
+ * pages, which are the longest text on the site.
+ */
+function enforceBlockLimits(blocks: unknown[]): void {
+  const check = (field: string, text: unknown, index: number) => {
+    if (typeof text !== "string") return;
+    const meta = fieldMeta(BLOCKS_TABLE, field);
+    if (!meta || meta.max <= 0 || text.length <= meta.max) return;
+    throw new LimitError(
+      `Block ${index + 1}: ${meta.label} must be ${meta.max} characters or fewer (got ${text.length}).`
+    );
+  };
+  blocks.forEach((b, i) => {
+    if (!b || typeof b !== "object") return;
+    const block = b as Record<string, unknown>;
+    if (block.type === "heading") check("heading", block.text, i);
+    if (block.type === "paragraph") check("paragraph", block.text, i);
+    if (block.type === "image") check("caption", block.caption, i);
+  });
+}
 
 const TABLE_TAGS: Record<string, string> = {
   site_settings: TAGS.settings,
@@ -305,6 +361,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ table: string 
     if (table === "site_settings") {
       // Upsert the singleton row.
       const data = normalizeSettingsBody(body);
+      enforceLimits(table, data);
       const row = await (prisma as any).siteSettings.upsert({
         where: { id: 1 },
         create: { id: 1, ...data },
@@ -314,10 +371,12 @@ export async function POST(req: Request, ctx: { params: Promise<{ table: string 
       return NextResponse.json(row);
     }
     const data = normalizeBody(table, body);
+    enforceLimits(table, data);
     const row = await model(table).create({ data });
     bust(table);
     return NextResponse.json(row);
   } catch (e: any) {
+    if (e instanceof LimitError) return NextResponse.json({ error: e.message }, { status: 400 });
     return NextResponse.json({ error: friendlyError(table, e) }, { status: 400 });
   }
 }
@@ -331,6 +390,7 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ table: string
   try {
     if (table === "site_settings") {
       const data = normalizeSettingsBody(body);
+      enforceLimits(table, data);
       const row = await (prisma as any).siteSettings.upsert({
         where: { id: 1 },
         create: { id: 1, ...data },
@@ -342,10 +402,12 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ table: string
     const { id, ...patch } = body;
     if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
     const data = normalizeBody(table, patch, "patch");
+    enforceLimits(table, data);
     const row = await model(table).update({ where: { id }, data });
     bust(table);
     return NextResponse.json(row);
   } catch (e: any) {
+    if (e instanceof LimitError) return NextResponse.json({ error: e.message }, { status: 400 });
     return NextResponse.json({ error: friendlyError(table, e) }, { status: 400 });
   }
 }
@@ -363,6 +425,7 @@ export async function DELETE(req: Request, ctx: { params: Promise<{ table: strin
     bust(table);
     return NextResponse.json({ ok: true });
   } catch (e: any) {
+    // No LimitError branch here: a delete carries no values to validate.
     return NextResponse.json({ error: friendlyError(table, e) }, { status: 400 });
   }
 }
