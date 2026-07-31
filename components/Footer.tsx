@@ -27,10 +27,10 @@ export function Footer({ settings }: { settings: SiteSettings | null }) {
         <div>
           <h3 className="font-serif text-xl mb-5">Quick Links</h3>
           <ul className="space-y-2 text-sm text-stone-300">
-            <li><Link href="/terms">Terms</Link></li>
-            <li><Link href="/about">About</Link></li>
-            <li><Link href="/privacy">Privacy Policy</Link></li>
             <li><Link href="/blog">Blog</Link></li>
+            <li><Link href="/contact">Contact</Link></li>
+            <li><Link href="/terms">Terms</Link></li>
+            <li><Link href="/privacy">Privacy Policy</Link></li>
           </ul>
         </div>
         <div>

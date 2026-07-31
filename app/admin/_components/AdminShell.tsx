@@ -5,34 +5,31 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Menu, X, ExternalLink, LogOut } from "lucide-react";
 
+// Grouped by the page each screen controls, so finding "the photo on X" means
+// opening the group named after X. Global settings sit in their own group at the
+// bottom rather than being mixed into the Home page screen.
 const NAV_GROUPS: { group: string; items: { href: string; label: string; exact?: boolean }[] }[] = [
   {
     group: "Home page",
     items: [
-      { href: "/admin", label: "Hero, CTA, contact & social", exact: true },
-      { href: "/admin/studio", label: "‘Create your story’ strip" },
+      { href: "/admin", label: "Hero, piercing cards & CTA", exact: true },
+      { href: "/admin/studio", label: "‘Create your story’ photos" },
       { href: "/admin/videos", label: "‘Watch us at work’ videos" },
     ],
   },
   {
-    group: "Piercing",
+    group: "Piercing pages",
     items: [
       { href: "/admin/piercing-content", label: "Kids & Adults copy" },
-      { href: "/admin/piercing", label: "Kids & Adults galleries" },
+      { href: "/admin/piercing/kids", label: "Kids gallery" },
+      { href: "/admin/piercing/adults", label: "Adults gallery" },
       { href: "/admin/earrings", label: "Earring categories" },
-      { href: "/admin/safety-items", label: "What makes us safe" },
+      { href: "/admin/safety-items", label: "‘What makes us safe’" },
     ],
   },
   {
     group: "About page",
-    items: [{ href: "/admin/about", label: "About page" }],
-  },
-  {
-    group: "Blog & legal",
-    items: [
-      { href: "/admin/blog", label: "Blog posts" },
-      { href: "/admin/legal", label: "Terms & Privacy" },
-    ],
+    items: [{ href: "/admin/about", label: "Copy & the two photos" }],
   },
   {
     group: "Work & people",
@@ -40,6 +37,14 @@ const NAV_GROUPS: { group: string; items: { href: string; label: string; exact?:
       { href: "/admin/artists", label: "Artists" },
       { href: "/admin/categories", label: "Categories" },
     ],
+  },
+  {
+    group: "Blog",
+    items: [{ href: "/admin/blog", label: "Blog posts" }],
+  },
+  {
+    group: "Legal",
+    items: [{ href: "/admin/legal", label: "Terms & Privacy" }],
   },
   {
     group: "Reviews",
@@ -54,6 +59,10 @@ const NAV_GROUPS: { group: string; items: { href: string; label: string; exact?:
       { href: "/admin/service-forms", label: "Forms & fields" },
       { href: "/admin/submissions", label: "Submissions" },
     ],
+  },
+  {
+    group: "Site-wide",
+    items: [{ href: "/admin/site-wide", label: "Contact, social & password" }],
   },
 ];
 

@@ -9,10 +9,8 @@ import { Marquee } from "@/components/Marquee";
 import { VideoPlaceholderCard } from "./VideoPlaceholderCard";
 import { VideoCarousel } from "./VideoCarousel";
 import { ServiceFormModal } from "./ServiceFormModal";
+import { whatsappHref } from "@/lib/whatsapp";
 import type { ServiceFormRow } from "@/lib/data";
-
-const WHATSAPP_DIGITS = "917208388209";
-const WHATSAPP_HREF = `https://wa.me/${WHATSAPP_DIGITS}?text=${encodeURIComponent("Hi Zenspace, I'd like to book a consultation.")}`;
 
 const LOCAL_TATTOOS = [
   "/assets/photos/tattoo-1.jpeg",
@@ -62,6 +60,11 @@ export function PageContent({ settings, artists, categories, studio, reviews, vi
   const displayedReviews =
     (reviews?.length ?? 0) >= 2 ? reviews : [...(reviews ?? []), ...PLACEHOLDER_REVIEWS].slice(0, 2);
   const [openForm, setOpenForm] = useState<null | ServiceFormSlug>(null);
+  // `fallback: true` guarantees a string, so every WhatsApp button on the home
+  // page follows the admin "WhatsApp number" field and still works before it's set.
+  const waHref = whatsappHref(settings?.whatsapp, "Hi Zenspace, I'd like to book a consultation.", {
+    fallback: true,
+  })!;
   return (
     <div className="bg-paper-texture">
       {/* Hero */}
@@ -86,7 +89,7 @@ export function PageContent({ settings, artists, categories, studio, reviews, vi
               <div className="absolute inset-0 bg-gradient-to-r from-stone-800 to-stone-600 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
             </Link>
             <a
-              href={WHATSAPP_HREF}
+              href={waHref}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 px-7 py-4 rounded-full bg-[#25D366] text-white font-medium shadow-md hover:shadow-[0_0_40px_rgba(37,211,102,0.45)] hover:scale-105 transition-all"
@@ -245,7 +248,7 @@ export function PageContent({ settings, artists, categories, studio, reviews, vi
 
             <div className="mt-6 flex gap-3 justify-center">
               <a
-                href={WHATSAPP_HREF}
+                href={waHref}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-gradient-to-r from-pink-500 to-rose-500 text-white text-sm font-medium shadow hover:shadow-lg hover:scale-105 transition-all"
@@ -301,7 +304,7 @@ export function PageContent({ settings, artists, categories, studio, reviews, vi
 
             <div className="mt-6 flex gap-3 justify-center">
               <a
-                href={WHATSAPP_HREF}
+                href={waHref}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white text-sm font-medium shadow hover:shadow-lg hover:scale-105 transition-all"
@@ -418,7 +421,11 @@ export function PageContent({ settings, artists, categories, studio, reviews, vi
       <section className="py-20">
         <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }} className="max-w-7xl mx-auto px-6">
           <h2 className="font-serif text-3xl md:text-4xl mb-4 text-center">
-            Rated highly by <span className="premium-gradient-text font-bold">250+</span> clients
+            Rated highly by{" "}
+            <span className="premium-gradient-text font-bold">
+              {settings?.google_review_count ? `${settings.google_review_count}+` : "250+"}
+            </span>{" "}
+            clients
           </h2>
           {settings?.instagram && (
             <p className="text-center mb-6">

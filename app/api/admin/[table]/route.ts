@@ -247,6 +247,15 @@ function searchFilter(table: ModelKey, q: string): any {
 }
 
 function friendlyError(table: ModelKey, e: any): string {
+  // P2021 / P2022 — the database is missing a table or column that the Prisma
+  // schema expects, i.e. a schema change that never reached this database. The
+  // raw Prisma message is a wall of generated bundle paths, so say it plainly:
+  // otherwise the screen just looks broken for no visible reason.
+  if (e?.code === "P2021" || e?.code === "P2022") {
+    const cause = e?.meta?.driverAdapterError?.cause;
+    const missing = cause?.column || cause?.table || e?.meta?.column || e?.meta?.table;
+    return `This database is missing ${missing ? `\`${missing}\`` : "a table or column"}, which this screen needs. The latest schema changes haven't been applied yet — apply supabase/schema.sql to the database, then reload.`;
+  }
   // Prisma unique-constraint violation
   if (e?.code === "P2002") {
     const field = Array.isArray(e?.meta?.target) ? e.meta.target.join(", ") : (e?.meta?.target || "value");

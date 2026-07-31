@@ -1,14 +1,11 @@
 "use client";
 
 import { MessageCircle } from "lucide-react";
-
-const DEFAULT_DIGITS = "917208388209";
+import { whatsappHref } from "@/lib/whatsapp";
 
 export function WhatsAppFab({ digits }: { digits?: string | null }) {
-  const cleaned = (digits || DEFAULT_DIGITS).replace(/\D/g, "") || DEFAULT_DIGITS;
-  const href = `https://wa.me/${cleaned}?text=${encodeURIComponent(
-    "Hi Zenspace, I'd like to know more."
-  )}`;
+  // `fallback: true` guarantees a string — the button is always visible.
+  const href = whatsappHref(digits, "Hi Zenspace, I'd like to know more.", { fallback: true })!;
 
   return (
     <a

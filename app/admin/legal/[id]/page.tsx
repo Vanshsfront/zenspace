@@ -19,7 +19,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
   return (
     <div className="max-w-3xl">
       <h1 className="font-serif text-3xl mb-6">Edit {page.title}</h1>
-      <LegalForm initial={{ id: page.id, title: page.title ?? "", blocks: (Array.isArray(page.blocks) ? page.blocks : []) as Block[] }} />
+      <LegalForm initial={{ id: page.id, slug: page.slug ?? "", title: page.title ?? "", blocks: (Array.isArray(page.blocks) ? page.blocks : []) as Block[] }} />
     </div>
   );
 }

@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Baby, MessageCircle, Phone as PhoneIcon, Sparkles, Gem, ShieldCheck, Smile, UserCircle2, ArrowRight } from "lucide-react";
+import { whatsappHref } from "@/lib/whatsapp";
 import type { SiteSettings, PiercingPhoto, EarringCategoryRow, SafetyItemRow } from "@/lib/data";
 import { SafetyItems } from "./SafetyItems";
 
@@ -17,16 +18,10 @@ const STAGGER_CHILD = {
   show: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] as const } },
 };
 
-function whatsappHref(raw: string | null | undefined, audience: "kids" | "adults") {
-  if (!raw) return null;
-  const digits = raw.replace(/\D/g, "");
-  if (!digits) return null;
-  const msg =
-    audience === "kids"
-      ? "Hi Zenspace, I'd like to book a piercing for my child."
-      : "Hi Zenspace, I'd like to book a piercing.";
-  return `https://wa.me/${digits}?text=${encodeURIComponent(msg)}`;
-}
+const WA_MESSAGE = {
+  kids: "Hi Zenspace, I'd like to book a piercing for my child.",
+  adults: "Hi Zenspace, I'd like to book a piercing.",
+} as const;
 
 const COPY = {
   kids: {
@@ -75,7 +70,7 @@ export function PiercingAudienceContent({
     (audience === "kids" ? settings?.piercing_kids_title : settings?.piercing_adults_title) || c.title;
   const intro =
     (audience === "kids" ? settings?.piercing_kids_intro : settings?.piercing_adults_intro) || c.intro;
-  const waHref = whatsappHref(settings?.whatsapp, audience);
+  const waHref = whatsappHref(settings?.whatsapp, WA_MESSAGE[audience]);
   const tel = settings?.phone?.split(/[/,]/)[0]?.trim();
 
   return (

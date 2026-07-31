@@ -101,7 +101,19 @@ async function withTimeout<T>(run: () => Promise<T>, fallback: T): Promise<T> {
     timer = setTimeout(() => resolve(fallback), QUERY_TIMEOUT_MS);
   });
   try {
-    const result = await Promise.race([run().catch(() => fallback), timeout]);
+    const result = await Promise.race([
+      run().catch((e) => {
+        // Log before swallowing. Without this a schema mismatch (a migration
+        // that never reached the database) is indistinguishable from an empty
+        // table: every page silently renders its hard-coded fallbacks and the
+        // admin panel looks like the fields simply don't work.
+        // Prisma errors name the failing model and column, so the message alone
+        // identifies the query.
+        console.error("[data] query failed, serving fallback:", e?.message || e);
+        return fallback;
+      }),
+      timeout,
+    ]);
     return result;
   } finally {
     if (timer) clearTimeout(timer);

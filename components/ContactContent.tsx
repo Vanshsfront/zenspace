@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { Star, MapPin, MessageCircle, Phone as PhoneIcon } from "lucide-react";
 import { MapEmbed } from "@/components/MapEmbed";
+import { whatsappHref } from "@/lib/whatsapp";
 import type { SiteSettings } from "@/lib/data";
 
 const STAGGER_CONTAINER = {
@@ -15,15 +16,8 @@ const STAGGER_CHILD = {
   show: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] as const } },
 };
 
-function whatsappHref(raw?: string | null) {
-  if (!raw) return null;
-  const digits = raw.replace(/\D/g, "");
-  if (!digits) return null;
-  return `https://wa.me/${digits}?text=${encodeURIComponent("Hi Zenspace, I'd like to book a consultation.")}`;
-}
-
 export function ContactContent({ settings }: { settings: SiteSettings | null }) {
-  const waHref = whatsappHref(settings?.whatsapp);
+  const waHref = whatsappHref(settings?.whatsapp, "Hi Zenspace, I'd like to book a consultation.");
   const tel = settings?.phone?.split(/[/,]/)[0]?.trim();
   const address = settings?.address || "Akruti Commercial Complex MIDC Andheri East Mumbai";
 

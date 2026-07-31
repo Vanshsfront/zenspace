@@ -134,6 +134,37 @@ create table if not exists portfolio_items (
   sort_order int default 0
 );
 
+-- ─── Backfill DB-level uuid defaults ──────────────────────────────
+-- The tables above were originally created by the Prisma migrations, which
+-- declare `id uuid not null` with NO database default — Prisma generates the
+-- uuid client side. That means every `create table if not exists` block above
+-- is a no-op on an existing database and its `default gen_random_uuid()` was
+-- never applied. Any raw insert that omits `id` — the seeds below, or a row
+-- added from the Supabase dashboard — then fails with 23502. Set the default
+-- on every uuid primary key that is still missing one.
+do $$
+declare t record;
+begin
+  for t in
+    select c.relname
+    from pg_class c
+    join pg_namespace n on n.oid = c.relnamespace
+    join pg_attribute a on a.attrelid = c.oid
+    where n.nspname = 'public'
+      and c.relkind = 'r'
+      and a.attname = 'id'
+      and a.attnum > 0
+      and not a.attisdropped
+      and a.atttypid = 'uuid'::regtype
+      and not a.atthasdef
+  loop
+    execute format(
+      'alter table public.%I alter column id set default gen_random_uuid()',
+      t.relname
+    );
+  end loop;
+end $$;
+
 -- ─── Seed default categories so the dropdown / static pages work ──
 insert into categories (name, slug, sort_order) values
   ('Realistic', 'realistic', 1),
