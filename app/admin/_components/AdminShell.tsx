@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Menu, X, ExternalLink, LogOut } from "lucide-react";
+import { Menu, X, ExternalLink, LogOut, PencilLine } from "lucide-react";
 
 // Grouped by the page each screen controls, so finding "the photo on X" means
 // opening the group named after X. Global settings sit in their own group at the
@@ -142,6 +142,16 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           </nav>
 
           <div className="pt-6 mt-6 border-t border-stone-700 space-y-1">
+            {/* Edit mode is just the live site with ?edit=1, which is otherwise
+                undiscoverable. Kept first because it is now the quicker way to
+                change most content: the screens above are for bulk work and for
+                records that have no visible place on the site. */}
+            <Link
+              href="/?edit=1"
+              className="flex items-center gap-2 px-3 py-2 rounded text-sm font-medium bg-stone-700 text-white hover:bg-stone-600"
+            >
+              <PencilLine size={14} /> Edit the site
+            </Link>
             <Link
               href="/"
               className="flex items-center gap-2 px-3 py-2 text-sm text-stone-400 hover:text-white"

@@ -9,6 +9,14 @@ const FALLBACK_PASSWORD = process.env.ADMIN_PASSWORD || "zenspace123098#";
 // source of truth. Wrapped in try/catch so login still works during the window
 // before the admin_auth table exists.
 async function expectedPassword(): Promise<string> {
+  // Outside production, ADMIN_PASSWORD overrides the stored password so a local
+  // machine can use a throwaway credential without changing the one that guards
+  // the live panel. The check is on NODE_ENV, not on the value, so a deployed
+  // build can never be opened with a development password even if the variable
+  // is set in the hosting environment by mistake.
+  if (process.env.NODE_ENV !== "production" && process.env.ADMIN_PASSWORD) {
+    return process.env.ADMIN_PASSWORD;
+  }
   try {
     const row = await (prisma as any).adminAuth.findUnique({ where: { id: 1 } });
     const stored = row?.password?.trim();
