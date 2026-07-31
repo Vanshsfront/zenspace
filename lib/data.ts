@@ -95,29 +95,70 @@ export type CategoryWithPhotos = Category & { photos: CategoryPhoto[] };
  * call still runs to completion in the background; that's fine.
  */
 const QUERY_TIMEOUT_MS = 5000;
-async function withTimeout<T>(run: () => Promise<T>, fallback: T): Promise<T> {
+
+/**
+ * Prerendering gets a longer budget and a retry. The first query of a build
+ * opens a cold pgbouncer connection, and losing a 5s race to that is common
+ * enough to have happened in testing.
+ */
+const BUILD_QUERY_TIMEOUT_MS = 20000;
+const BUILD_ATTEMPTS = 2;
+
+/** Set by next build (next/dist/build/index.js), so this is only true while prerendering. */
+function isPrerendering(): boolean {
+  return process.env.NEXT_PHASE === "phase-production-build";
+}
+
+type Attempt<T> = { ok: true; value: T } | { ok: false; reason: string };
+
+async function attempt<T>(run: () => Promise<T>, ms: number): Promise<Attempt<T>> {
   let timer: ReturnType<typeof setTimeout> | undefined;
-  const timeout = new Promise<T>((resolve) => {
-    timer = setTimeout(() => resolve(fallback), QUERY_TIMEOUT_MS);
+  const timeout = new Promise<Attempt<T>>((resolve) => {
+    timer = setTimeout(() => resolve({ ok: false, reason: `timed out after ${ms}ms` }), ms);
   });
   try {
-    const result = await Promise.race([
-      run().catch((e) => {
-        // Log before swallowing. Without this a schema mismatch (a migration
-        // that never reached the database) is indistinguishable from an empty
-        // table: every page silently renders its hard-coded fallbacks and the
-        // admin panel looks like the fields simply don't work.
-        // Prisma errors name the failing model and column, so the message alone
-        // identifies the query.
-        console.error("[data] query failed, serving fallback:", e?.message || e);
-        return fallback;
-      }),
+    return await Promise.race([
+      run()
+        .then((value) => ({ ok: true as const, value }))
+        .catch((e) => ({ ok: false as const, reason: e?.message || String(e) })),
       timeout,
     ]);
-    return result;
   } finally {
     if (timer) clearTimeout(timer);
   }
+}
+
+async function withTimeout<T>(run: () => Promise<T>, fallback: T, label = "query"): Promise<T> {
+  const prerender = isPrerendering();
+  const budget = prerender ? BUILD_QUERY_TIMEOUT_MS : QUERY_TIMEOUT_MS;
+  const tries = prerender ? BUILD_ATTEMPTS : 1;
+
+  let reason = "unknown";
+  for (let i = 1; i <= tries; i++) {
+    const result = await attempt(run, budget);
+    if (result.ok) return result.value;
+    reason = result.reason;
+    // Both failure modes are logged. Previously only the thrown-error path was:
+    // a timeout resolved the fallback silently, so a schema mismatch was visible
+    // in the log but a slow connection was not, and the two produce the same
+    // empty page. Prisma errors name the failing model, so the reason usually
+    // identifies the query on its own.
+    console.error(`[data] ${label} failed (attempt ${i}/${tries}): ${reason}`);
+  }
+
+  if (prerender) {
+    // At request time a fallback is the right answer: one visitor sees stale or
+    // empty content instead of a hanging page. At build time it is the wrong
+    // one. The empty result gets baked into static HTML and served for the whole
+    // revalidate window, and because the fallback resolves successfully the
+    // build reports success. Failing loudly is the only way that does not ship
+    // a data-less site.
+    throw new Error(
+      `[data] ${label} failed during prerender after ${tries} attempt(s): ${reason}. ` +
+        `Refusing to prerender fallback content, which would be cached as though it were real.`
+    );
+  }
+  return fallback;
 }
 
 // `prisma as any` keeps this file building cleanly even when `prisma generate`
@@ -131,6 +172,7 @@ export const getSiteSettings = unstable_cache(
     return withTimeout<SiteSettings | null>(
       async () => (await db.siteSettings.findUnique({ where: { id: 1 } })) as SiteSettings | null,
       null,
+      "getSiteSettings",
     );
   },
   ["site_settings"],
@@ -145,6 +187,7 @@ export const getArtists = unstable_cache(
           orderBy: [{ sort_order: "asc" }, { name: "asc" }],
         })) as Artist[],
       [],
+      "getArtists",
     );
   },
   ["artists"],
@@ -160,6 +203,7 @@ const _artistBySlug = unstable_cache(
           include: { portfolio: { orderBy: { sort_order: "asc" } } },
         })) as ArtistWithPortfolio | null,
       null,
+      "_artistBySlug",
     );
   },
   ["artist_by_slug"],
@@ -175,6 +219,7 @@ export const getCategories = unstable_cache(
           orderBy: [{ sort_order: "asc" }, { name: "asc" }],
         })) as Category[],
       [],
+      "getCategories",
     );
   },
   ["categories"],
@@ -190,6 +235,7 @@ const _categoryBySlug = unstable_cache(
           include: { photos: { orderBy: { sort_order: "asc" } } },
         })) as CategoryWithPhotos | null,
       null,
+      "_categoryBySlug",
     );
   },
   ["category_by_slug"],
@@ -203,6 +249,7 @@ export const getStudioPhotos = unstable_cache(
       async () =>
         (await db.studioPhoto.findMany({ orderBy: { sort_order: "asc" } })) as StudioPhoto[],
       [],
+      "getStudioPhotos",
     );
   },
   ["studio_photos"],
@@ -218,6 +265,7 @@ const _piercingPhotos = unstable_cache(
           orderBy: { sort_order: "asc" },
         })) as PiercingPhoto[],
       [],
+      "_piercingPhotos",
     );
   },
   ["piercing_photos_by_audience"],
@@ -231,6 +279,7 @@ export const getReviews = unstable_cache(
       async () =>
         (await db.review.findMany({ orderBy: { sort_order: "asc" } })) as Review[],
       [],
+      "getReviews",
     );
   },
   ["reviews"],
@@ -243,6 +292,7 @@ export const getShortVideos = unstable_cache(
       async () =>
         (await db.shortVideo.findMany({ orderBy: { sort_order: "asc" } })) as ShortVideo[],
       [],
+      "getShortVideos",
     );
   },
   ["short_videos"],
@@ -258,6 +308,7 @@ const _earringOptions = unstable_cache(
           orderBy: { sort_order: "asc" },
         })) as EarringOption[],
       [],
+      "_earringOptions",
     );
   },
   ["earring_options"],
@@ -292,6 +343,7 @@ export const getEarringCategories = unstable_cache(
         orderBy: [{ sort_order: "asc" }, { name: "asc" }],
       })) as EarringCategoryRow[],
       [],
+      "getEarringCategories",
     );
   },
   ["earring_categories_by_audience"],
@@ -311,6 +363,7 @@ export const getEarringCategoryWithProducts = unstable_cache(
         return { category: cat as EarringCategoryRow, products: products as EarringProductRow[] };
       },
       null,
+      "getEarringCategoryWithProducts",
     );
   },
   ["earring_category_with_products"],
@@ -345,6 +398,7 @@ export const getServiceForm = unstable_cache(
         return (f as unknown as ServiceFormRow) ?? null;
       },
       null,
+      "getServiceForm",
     );
   },
   ["service_form_by_slug"],
@@ -368,6 +422,7 @@ export const getSafetyItems = unstable_cache(
         orderBy: [{ sort_order: "asc" }],
       })) as SafetyItemRow[],
       [],
+      "getSafetyItems",
     );
   },
   ["safety_items_by_audience"],
@@ -396,6 +451,7 @@ export const getBlogPosts = unstable_cache(
           orderBy: [{ published_at: "desc" }, { sort_order: "asc" }],
         })) as BlogPostRow[],
       [],
+      "getBlogPosts",
     );
   },
   ["blog_posts_published"],
@@ -408,6 +464,7 @@ const _blogPost = unstable_cache(
       async () =>
         (await db.blogPost.findFirst({ where: { slug, published: true } })) as BlogPostRow | null,
       null,
+      "_blogPost",
     );
   },
   ["blog_post_by_slug"],
@@ -420,6 +477,7 @@ const _legalPage = unstable_cache(
     return withTimeout<LegalPageRow | null>(
       async () => (await db.legalPage.findUnique({ where: { slug } })) as LegalPageRow | null,
       null,
+      "_legalPage",
     );
   },
   ["legal_page_by_slug"],

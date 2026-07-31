@@ -185,8 +185,13 @@ export const FIELDS: Record<FieldKey, FieldMeta> = {
   // --------------------------------------------------------------- site-wide
   "site_settings.address": {
     label: "Studio address",
-    // The contact page column is the tightest of the three places it renders.
-    max: 200,
+    // The contact page column is the tightest of the three places it renders,
+    // which suggested 200. The real studio address is 206 characters and has
+    // always rendered correctly there, so the estimate was simply wrong: a cap
+    // that the live value already breaks would make the row unsaveable through
+    // the admin form, which PATCHes every field at once. 260 keeps the layout
+    // honest while leaving room for a unit number or a landmark.
+    max: 260,
     kind: "textarea",
     help: "Footer, contact page and the map query.",
   },
@@ -234,7 +239,10 @@ export const FIELDS: Record<FieldKey, FieldMeta> = {
   // --------------------------------------------------------------- categories
   "categories.photo": { label: "Category cover photo", max: 0, kind: "image" },
   "categories.name": { label: "Category name", max: 24, kind: "text" },
-  "categories.description": { label: "Category description", max: 320, kind: "textarea" },
+  // 320 was a guess at how much the category header could take; the live
+  // "Small & Minimal" copy is 515 characters of SEO text that already renders,
+  // so the cap was below reality and would have locked the row.
+  "categories.description": { label: "Category description", max: 600, kind: "textarea" },
   "category_photos.photo": { label: "Category photo", max: 0, kind: "image" },
   "category_photos.caption": { label: "Photo caption", max: 70, kind: "text" },
   "portfolio_items.photo": { label: "Portfolio photo", max: 0, kind: "image" },
