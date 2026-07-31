@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { ImageUpload } from "../ImageUpload";
 import { FileUpload } from "./FileUpload";
+import { fieldMax, isNearLimit } from "@/lib/edit/fields";
 
 export type SettingsField = {
   key: string;
@@ -11,6 +12,23 @@ export type SettingsField = {
   /** Renders a divider + subheading above this field, grouping what follows. */
   heading?: string;
 };
+
+/**
+ * Character caps come from lib/edit/fields.ts, the same registry the inline
+ * editors on the public site read. Neither surface may accept a value the other
+ * would refuse, so the limit lives in one place and both look it up.
+ */
+function CharCount({ length, max }: { length: number; max: number }) {
+  return (
+    <span
+      className={`text-xs tabular-nums ${
+        isNearLimit(length, max) ? "text-amber-600 font-medium" : "text-stone-400"
+      }`}
+    >
+      {length}/{max}
+    </span>
+  );
+}
 
 /**
  * Edits a subset of the single-row site_settings record. Each admin section
@@ -79,42 +97,52 @@ export function SettingsSection({ fields }: { fields: SettingsField[] }) {
         </div>
       )}
 
-      {fields.map((f) => (
-        <div key={f.key}>
-          {f.heading && (
-            <>
-              <hr className="my-6" />
-              <h2 className="font-serif text-xl text-stone-700 mb-4">{f.heading}</h2>
-            </>
-          )}
-          <label className="block">
-            <span className="text-sm font-medium">{f.label}</span>
-            {f.help && <span className="block text-xs text-stone-500 mb-1">{f.help}</span>}
-            <div className="mt-1">
-              {f.type === "image" ? (
-                <ImageUpload value={s![f.key]} onChange={(url) => setS({ ...s!, [f.key]: url })} />
-              ) : f.type === "video" ? (
-                <FileUpload value={s![f.key]} onChange={(url) => setS({ ...s!, [f.key]: url })} kind="video" accept="video/*" />
-              ) : f.type === "pdf" ? (
-                <FileUpload value={s![f.key]} onChange={(url) => setS({ ...s!, [f.key]: url })} kind="pdf" accept="application/pdf" />
-              ) : f.type === "textarea" ? (
-                <textarea
-                  value={s![f.key] ?? ""}
-                  onChange={(e) => setS({ ...s!, [f.key]: e.target.value })}
-                  rows={4}
-                  className="w-full px-3 py-2 rounded-lg border bg-white"
-                />
-              ) : (
-                <input
-                  value={s![f.key] ?? ""}
-                  onChange={(e) => setS({ ...s!, [f.key]: e.target.value })}
-                  className="w-full px-3 py-2 rounded-lg border bg-white"
-                />
-              )}
-            </div>
-          </label>
-        </div>
-      ))}
+      {fields.map((f) => {
+        // Every field on these screens is a site_settings column.
+        const max = fieldMax("site_settings", f.key);
+        const length = String(s![f.key] ?? "").length;
+        return (
+          <div key={f.key}>
+            {f.heading && (
+              <>
+                <hr className="my-6" />
+                <h2 className="font-serif text-xl text-stone-700 mb-4">{f.heading}</h2>
+              </>
+            )}
+            <label className="block">
+              <span className="flex items-baseline justify-between gap-3">
+                <span className="text-sm font-medium">{f.label}</span>
+                {max !== undefined && <CharCount length={length} max={max} />}
+              </span>
+              {f.help && <span className="block text-xs text-stone-500 mb-1">{f.help}</span>}
+              <div className="mt-1">
+                {f.type === "image" ? (
+                  <ImageUpload value={s![f.key]} onChange={(url) => setS({ ...s!, [f.key]: url })} />
+                ) : f.type === "video" ? (
+                  <FileUpload value={s![f.key]} onChange={(url) => setS({ ...s!, [f.key]: url })} kind="video" accept="video/*" />
+                ) : f.type === "pdf" ? (
+                  <FileUpload value={s![f.key]} onChange={(url) => setS({ ...s!, [f.key]: url })} kind="pdf" accept="application/pdf" />
+                ) : f.type === "textarea" ? (
+                  <textarea
+                    value={s![f.key] ?? ""}
+                    onChange={(e) => setS({ ...s!, [f.key]: e.target.value })}
+                    maxLength={max}
+                    rows={4}
+                    className="w-full px-3 py-2 rounded-lg border bg-white"
+                  />
+                ) : (
+                  <input
+                    value={s![f.key] ?? ""}
+                    onChange={(e) => setS({ ...s!, [f.key]: e.target.value })}
+                    maxLength={max}
+                    className="w-full px-3 py-2 rounded-lg border bg-white"
+                  />
+                )}
+              </div>
+            </label>
+          </div>
+        );
+      })}
 
       {saveError && (
         <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">

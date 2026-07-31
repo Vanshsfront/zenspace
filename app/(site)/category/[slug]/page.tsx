@@ -2,6 +2,9 @@ import { notFound } from "next/navigation";
 import { CategoryDetailContent } from "@/components/CategoryDetailContent";
 import { getCategoryWithPhotos } from "@/lib/data";
 
+// Written before categories.description existed. The column now wins wherever
+// it is filled in, so editing the description on the page sticks; these two
+// stay only so the copy that has been live for months doesn't vanish.
 const FRIENDLY_DESCRIPTION: Record<string, string> = {
   "realistic":
     "Detailed realistic tattoos created in Andheri, Mumbai, focusing on depth, accuracy, and long-lasting clarity. Each piece is rendered with patience for shading and dimension.",
@@ -22,8 +25,9 @@ export default async function CategoryDetailPage({ params }: { params: Promise<{
 
   return (
     <CategoryDetailContent
+      id={cat.id}
       name={cat.name}
-      description={FRIENDLY_DESCRIPTION[slug]}
+      description={cat.description || FRIENDLY_DESCRIPTION[slug]}
       photos={cat.photos.map((p) => ({ id: p.id, photo: p.photo, caption: p.caption }))}
     />
   );

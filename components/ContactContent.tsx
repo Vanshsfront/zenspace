@@ -3,8 +3,20 @@
 import { motion } from "framer-motion";
 import { Star, MapPin, MessageCircle, Phone as PhoneIcon } from "lucide-react";
 import { MapEmbed } from "@/components/MapEmbed";
+import { EditableText } from "@/lib/edit/EditableText";
+import { useEditMode } from "@/lib/edit/context";
 import { whatsappHref } from "@/lib/whatsapp";
 import type { SiteSettings } from "@/lib/data";
+
+/**
+ * The review count sits inside the link to the Google listing, so in edit mode a
+ * click meant for the number would open Google instead. Editable regions mark
+ * themselves with a data attribute, which is enough to tell the two apart.
+ * Outside edit mode nothing carries the attribute and the link behaves normally.
+ */
+function swallowEditClicks(e: React.MouseEvent<HTMLAnchorElement>) {
+  if ((e.target as HTMLElement).closest("[data-edit-field],[data-edit-media]")) e.preventDefault();
+}
 
 const STAGGER_CONTAINER = {
   hidden: { opacity: 0 },
@@ -17,9 +29,15 @@ const STAGGER_CHILD = {
 };
 
 export function ContactContent({ settings }: { settings: SiteSettings | null }) {
+  const editing = useEditMode();
   const waHref = whatsappHref(settings?.whatsapp, "Hi Zenspace, I'd like to book a consultation.");
   const tel = settings?.phone?.split(/[/,]/)[0]?.trim();
   const address = settings?.address || "Akruti Commercial Complex MIDC Andheri East Mumbai";
+  // Both address slots below fall back to different strings, so whichever one
+  // the admin edits first is the one that gets adopted into the column.
+  const cardAddress =
+    settings?.address ||
+    "Shop No. 101, 1st Floor,\nZenspace Art And Tattoo,\nAkruti Commercial Complex, MIDC Central Rd,\nAndheri East, Mumbai 400093";
 
   return (
     <div className="bg-paper-texture min-h-screen pt-32 pb-24 px-6 relative overflow-hidden">
@@ -67,6 +85,34 @@ export function ContactContent({ settings }: { settings: SiteSettings | null }) 
               See on map
             </a>
           </motion.div>
+
+          {/* WhatsApp and phone only ever appear on this page as hrefs, and each
+              button is gated on its value, so clearing one takes the affordance
+              away with it. Edit mode gets a slot that stays put either way. */}
+          {editing && (
+            <div className="mt-5 flex flex-wrap justify-center gap-x-8 gap-y-2 text-sm text-stone-500">
+              <span>
+                WhatsApp number:{" "}
+                <EditableText
+                  table="site_settings"
+                  field="whatsapp"
+                  className="inline-block min-w-[7rem] text-stone-900 font-medium"
+                >
+                  {settings?.whatsapp || ""}
+                </EditableText>
+              </span>
+              <span>
+                Phone number(s):{" "}
+                <EditableText
+                  table="site_settings"
+                  field="phone"
+                  className="inline-block min-w-[7rem] text-stone-900 font-medium"
+                >
+                  {settings?.phone || ""}
+                </EditableText>
+              </span>
+            </div>
+          )}
         </motion.div>
 
         {/* Get in touch */}
@@ -88,10 +134,14 @@ export function ContactContent({ settings }: { settings: SiteSettings | null }) 
               <h3 className="font-serif text-2xl md:text-3xl tracking-wide leading-tight">ZENSPACE TATTOO AND PIERCING</h3>
             </div>
 
-            <p className="text-stone-400 text-lg leading-relaxed mb-8 relative z-10 whitespace-pre-line">
-              {settings?.address ||
-                "Shop No. 101, 1st Floor,\nZenspace Art And Tattoo,\nAkruti Commercial Complex, MIDC Central Rd,\nAndheri East, Mumbai 400093"}
-            </p>
+            <EditableText
+              table="site_settings"
+              field="address"
+              as="p"
+              className="text-stone-400 text-lg leading-relaxed mb-8 relative z-10 whitespace-pre-line"
+            >
+              {cardAddress}
+            </EditableText>
 
             {waHref && (
               <a
@@ -110,14 +160,39 @@ export function ContactContent({ settings }: { settings: SiteSettings | null }) 
               target="_blank"
               rel="noopener noreferrer"
               aria-label="See our Google reviews"
+              onClick={swallowEditClicks}
               className="flex flex-wrap items-center gap-3 bg-stone-800/80 w-fit px-6 py-3 rounded-full border border-stone-700 backdrop-blur-md relative z-10 mt-auto transition-all hover:bg-stone-700/80 hover:border-stone-600 hover:scale-[1.03]"
             >
               <span className="font-bold text-xl">5.0</span>
               <div className="flex text-yellow-500">
                 {Array.from({ length: 5 }).map((_, i) => <Star key={i} size={16} fill="currentColor" />)}
               </div>
-              <span className="text-stone-400 font-medium">{settings?.google_review_count ?? 193} reviews</span>
+              <span className="text-stone-400 font-medium">
+                {/* The word "reviews" is markup, so only the number is the edit
+                    target and `value` carries the raw column behind it. */}
+                <EditableText
+                  table="site_settings"
+                  field="google_review_count"
+                  value={String(settings?.google_review_count ?? 193)}
+                >
+                  {settings?.google_review_count ?? 193}
+                </EditableText>{" "}
+                reviews
+              </span>
             </a>
+
+            {/* The listing URL is an href and shows nowhere as text, so edit
+                mode gets a slot for it under the badge it drives. */}
+            {editing && (
+              <EditableText
+                table="site_settings"
+                field="google_reviews_url"
+                as="p"
+                className="text-stone-500 text-xs mt-3 relative z-10 break-all"
+              >
+                {settings?.google_reviews_url || "https://share.google/pSxgjeACR2Lh3WI9P"}
+              </EditableText>
+            )}
           </motion.div>
 
           {/* Right: form */}
@@ -159,7 +234,16 @@ export function ContactContent({ settings }: { settings: SiteSettings | null }) 
         {/* Map (the merged 'Locate Us' block — /locate-us redirects here) */}
         <section id="map" className="scroll-mt-28">
           <h2 className="font-serif text-3xl md:text-4xl mb-6 text-stone-900">Find us</h2>
-          <p className="text-stone-700 mb-6 max-w-2xl whitespace-pre-line">{address}</p>
+          {/* The same column the dark card above writes to. It is also the map
+              query, so the pin follows whatever is typed here. */}
+          <EditableText
+            table="site_settings"
+            field="address"
+            as="p"
+            className="text-stone-700 mb-6 max-w-2xl whitespace-pre-line"
+          >
+            {address}
+          </EditableText>
           <MapEmbed query={address} />
         </section>
       </div>

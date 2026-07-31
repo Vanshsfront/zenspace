@@ -155,18 +155,28 @@ function slugify(s: string): string {
 }
 
 // Strip blank strings to null so unique columns (slug) don't collide on "".
-function normalizeBody(table: ModelKey, body: Record<string, any>): Record<string, any> {
+function normalizeBody(
+  table: ModelKey,
+  body: Record<string, any>,
+  mode: "create" | "patch" = "create"
+): Record<string, any> {
   const out: Record<string, any> = { ...body };
   for (const k of Object.keys(out)) {
     if (typeof out[k] === "string" && out[k].trim() === "") out[k] = null;
   }
-  // Auto-derive a slug from name when the admin didn't provide one — both for
-  // create and patch. Ensures /category/[slug] and /our-artist/[slug] resolve.
-  if ((table === "categories" || table === "artists" || table === "earring_categories" || table === "blog_posts") && !out.slug && typeof out.name === "string") {
-    out.slug = slugify(out.name);
-  }
-  if (table === "blog_posts" && !out.slug && typeof out.title === "string") {
-    out.slug = slugify(out.title);
+  // Auto-derive a slug from name ONLY on create. Deriving it on patch as well
+  // meant renaming a row silently rewrote its public URL: the inline editors
+  // send just { id, name } on a debounce, so a rename walked /category/[slug]
+  // through every partial value the admin typed, breaking existing links and
+  // firing a revalidation for each one. An explicit slug in the body is still
+  // honoured on patch, which is how the admin forms rename a URL on purpose.
+  if (mode === "create") {
+    if ((table === "categories" || table === "artists" || table === "earring_categories" || table === "blog_posts") && !out.slug && typeof out.name === "string") {
+      out.slug = slugify(out.name);
+    }
+    if (table === "blog_posts" && !out.slug && typeof out.title === "string") {
+      out.slug = slugify(out.title);
+    }
   }
   if (table === "blog_posts") {
     if (typeof out.published === "string") out.published = out.published === "true";
@@ -331,7 +341,7 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ table: string
     }
     const { id, ...patch } = body;
     if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
-    const data = normalizeBody(table, patch);
+    const data = normalizeBody(table, patch, "patch");
     const row = await model(table).update({ where: { id }, data });
     bust(table);
     return NextResponse.json(row);

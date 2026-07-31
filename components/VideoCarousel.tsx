@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { ShortVideoCard } from "./ShortVideoCard";
+import { EditableCollection } from "@/lib/edit/EditableCollection";
 
 type Video = { id: string; video: string; poster?: string | null; caption?: string | null };
 
@@ -65,15 +66,27 @@ export function VideoCarousel({ videos }: { videos: Video[] }) {
           msOverflowStyle: "none",
         }}
       >
-        {videos.map((v) => (
-          <div key={v.id} className="snap-start shrink-0">
-            <ShortVideoCard
-              src={v.video}
-              poster={v.poster ?? undefined}
-              caption={v.caption ?? undefined}
-            />
-          </div>
-        ))}
+        <EditableCollection
+          table="short_videos"
+          items={videos}
+          // video is NOT NULL, so a new row cannot start empty and there is no
+          // placeholder clip to point it at. It starts as a copy of the first
+          // card and the admin swaps the file with Replace.
+          newItem={{ video: videos[0]?.video }}
+          addLabel="Add video"
+          itemLabel="video"
+        >
+          {(v) => (
+            <div className="snap-start shrink-0">
+              <ShortVideoCard
+                id={v.id}
+                src={v.video}
+                poster={v.poster ?? undefined}
+                caption={v.caption ?? undefined}
+              />
+            </div>
+          )}
+        </EditableCollection>
       </div>
 
       {/* Arrow controls — only meaningful when there's more than one video. */}

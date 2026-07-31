@@ -1,9 +1,17 @@
 import Link from "next/link";
 import { Baby, UserCircle2, ArrowRight, Sparkles } from "lucide-react";
+import { getSiteSettings } from "@/lib/data";
+import { EditableText } from "@/lib/edit/EditableText";
 
 export const metadata = { title: "Piercings | Zenspace" };
 
-export default function PiercingLandingPage() {
+export default async function PiercingLandingPage() {
+  // piercing_title, piercing_intro and piercing_baby_blurb have been columns on
+  // site_settings all along but nothing read them, so this copy was frozen in
+  // the JSX. Reading them here is what makes the landing page editable without
+  // touching the schema; the literals below stay as the fallback.
+  const settings = await getSiteSettings();
+
   return (
     <div className="bg-paper-texture min-h-screen pt-32 pb-24 px-6 relative overflow-hidden">
       <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-stone-200/40 blur-[120px] rounded-full pointer-events-none -z-10" />
@@ -11,10 +19,23 @@ export default function PiercingLandingPage() {
         <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-stone-900 text-stone-50 text-xs uppercase tracking-widest mb-6">
           <Sparkles size={14} /> Service
         </span>
-        <h1 className="font-serif text-5xl md:text-7xl mb-6 text-stone-900 tracking-tight">Piercings, done with care</h1>
-        <p className="text-lg md:text-xl text-stone-600 max-w-2xl mx-auto leading-relaxed mb-14">
-          Safe, hygienic and gentle piercing for every age. Choose the experience that fits you.
-        </p>
+        <EditableText
+          as="h1"
+          table="site_settings"
+          field="piercing_title"
+          className="font-serif text-5xl md:text-7xl mb-6 text-stone-900 tracking-tight"
+        >
+          {settings?.piercing_title || "Piercings, done with care"}
+        </EditableText>
+        <EditableText
+          as="p"
+          table="site_settings"
+          field="piercing_intro"
+          className="text-lg md:text-xl text-stone-600 max-w-2xl mx-auto leading-relaxed mb-14"
+        >
+          {settings?.piercing_intro ||
+            "Safe, hygienic and gentle piercing for every age. Choose the experience that fits you."}
+        </EditableText>
 
         <div className="grid md:grid-cols-2 gap-6 md:gap-10">
           <Link
@@ -26,7 +47,9 @@ export default function PiercingLandingPage() {
               <Baby size={30} />
             </span>
             <h2 className="font-serif text-3xl text-stone-900 mb-2">For Kids</h2>
-            <p className="text-stone-600 mb-6">Gentle, sterile piercings for babies and children.</p>
+            <EditableText as="p" table="site_settings" field="piercing_baby_blurb" className="text-stone-600 mb-6">
+              {settings?.piercing_baby_blurb || "Gentle, sterile piercings for babies and children."}
+            </EditableText>
             <span className="inline-flex items-center gap-2 text-pink-600 font-medium">
               Explore <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
             </span>

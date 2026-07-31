@@ -15,13 +15,16 @@ export default async function ArtistProfilePage({ params }: { params: Promise<{ 
 
   return (
     <ArtistProfileContent
+      id={a.id}
       name={a.name}
       role={a.role || ""}
       experience={a.experience || "—"}
       specialty={a.specialty || "—"}
       bio={a.bio || ""}
       photo={a.photo || ""}
-      works={(a.portfolio || []).map((p) => p.photo)}
+      // Inline editing writes per row, so the portfolio keeps its ids instead
+      // of being flattened to a list of URLs.
+      works={(a.portfolio || []).map((p) => ({ id: p.id, photo: p.photo }))}
     />
   );
 }

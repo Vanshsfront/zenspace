@@ -2,14 +2,20 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, Star, MessageCircle, Sparkles, Baby, Gem, Heart, ShieldCheck, Smile, UserCircle2 } from "lucide-react";
+import { ArrowRight, Star, MessageCircle, Sparkles, Baby, Gem, Heart, Loader2, Plus, ShieldCheck, Smile, UserCircle2 } from "lucide-react";
 import { motion } from "framer-motion";
-import { useState } from "react";
+import { useRef, useState, type ComponentProps, type ElementType, type ReactNode } from "react";
 import { Marquee } from "@/components/Marquee";
 import { VideoPlaceholderCard } from "./VideoPlaceholderCard";
 import { VideoCarousel } from "./VideoCarousel";
 import { ServiceFormModal } from "./ServiceFormModal";
 import { whatsappHref } from "@/lib/whatsapp";
+import { uploadMediaLazy } from "@/lib/edit/uploadLazy";
+import { useEditContext, useEditMode } from "@/lib/edit/context";
+import { useRowMutations, useRowPatch } from "@/lib/edit/useSave";
+import { EditableText } from "@/lib/edit/EditableText";
+import { EditableImage } from "@/lib/edit/EditableImage";
+import { EditableCollection } from "@/lib/edit/EditableCollection";
 import type { ServiceFormRow } from "@/lib/data";
 
 const LOCAL_TATTOOS = [
@@ -23,6 +29,14 @@ const LOCAL_TATTOOS = [
 ];
 const LOCAL_STUDIO = "/assets/photos/studio-1.png";
 const pickLocal = (i: number) => LOCAL_TATTOOS[((i % LOCAL_TATTOOS.length) + LOCAL_TATTOOS.length) % LOCAL_TATTOOS.length];
+
+// Fills the studio strip while studio_photos is empty so the section is never
+// blank. These are bundled files rather than rows, so they never get an editing
+// handle — the "Add studio photo" button next to them creates the real thing.
+const FALLBACK_STUDIO = [
+  { id: "f-studio", src: LOCAL_STUDIO, alt: "Inside Zenspace" },
+  ...LOCAL_TATTOOS.slice(0, 4).map((src, i) => ({ id: `f-${i}`, src, alt: "Tattoo" })),
+];
 
 const STAGGER_CHILD = {
   hidden: { opacity: 0, y: 30 },
@@ -50,15 +64,33 @@ const PLACEHOLDER_REVIEWS = [
   { id: "p-r-3", client_name: "Priya Iyer", review: "First piercing for my daughter, kind, quick, and reassuring. Aftercare instructions were clear. Healed without a hitch.", rating: 5, photo: null },
 ];
 
+// EditableText hands the element it renders only a className and children, so a
+// staggered paragraph would lose its variants the moment it became editable.
+// This carries them instead and passes everything else (including the ref the
+// inline editor attaches) straight through.
+function StaggerP(props: ComponentProps<typeof motion.p>) {
+  return <motion.p variants={STAGGER_CHILD} {...props} />;
+}
+
 type ServiceFormSlug = "custom-design" | "cover-up" | "piercing";
 
 export function PageContent({ settings, artists, categories, studio, reviews, videos, serviceForms }: any & { serviceForms: { [k in ServiceFormSlug]: ServiceFormRow | null } }) {
+  // Drives the affordances that only make sense to an admin: a decorative sheet
+  // that has to stop swallowing hovers, and the empty lines that need somewhere
+  // to type. Always false for a visitor, so the markup below is unchanged.
+  const editing = useEditMode();
   // Pad to a minimum of 3 so the section never reads as one lonely artist /
   // one lonely review. Real records always show first.
+  const realArtists = artists ?? [];
+  const realReviews = reviews ?? [];
   const displayedArtists =
-    (artists?.length ?? 0) >= 3 ? artists : [...(artists ?? []), ...GUEST_ARTISTS].slice(0, 3);
+    realArtists.length >= 3 ? realArtists : [...realArtists, ...GUEST_ARTISTS].slice(0, 3);
   const displayedReviews =
-    (reviews?.length ?? 0) >= 2 ? reviews : [...(reviews ?? []), ...PLACEHOLDER_REVIEWS].slice(0, 2);
+    realReviews.length >= 2 ? realReviews : [...realReviews, ...PLACEHOLDER_REVIEWS].slice(0, 2);
+  // The padding, i.e. everything the editor must keep its hands off: these rows
+  // have synthetic ids that no database row answers to.
+  const guestArtists = displayedArtists.slice(realArtists.length);
+  const placeholderReviews = displayedReviews.slice(realReviews.length);
   const [openForm, setOpenForm] = useState<null | ServiceFormSlug>(null);
   // `fallback: true` guarantees a string, so every WhatsApp button on the home
   // page follows the admin "WhatsApp number" field and still works before it's set.
@@ -71,14 +103,18 @@ export function PageContent({ settings, artists, categories, studio, reviews, vi
       <section className="max-w-7xl mx-auto px-6 pt-36 pb-20 md:pt-48 md:pb-28 grid md:grid-cols-2 gap-12 items-center">
         <motion.div variants={STAGGER_CONTAINER} initial="hidden" whileInView="show" viewport={{ once: true }}>
           <motion.h1 variants={STAGGER_CHILD} className="font-serif text-5xl md:text-6xl leading-tight tracking-tight text-stone-900">
-            <span className="font-bold">{settings?.hero_title || "We help you choose the right tattoo"}</span>
+            <EditableText table="site_settings" field="hero_title" as="span" className="font-bold">
+              {settings?.hero_title || "We help you choose the right tattoo"}
+            </EditableText>
             <br />
-            <span className="italic premium-gradient-text">{settings?.hero_subtitle || "Not just any tattoo."}</span>
+            <EditableText table="site_settings" field="hero_subtitle" as="span" className="italic premium-gradient-text">
+              {settings?.hero_subtitle || "Not just any tattoo."}
+            </EditableText>
           </motion.h1>
-          <motion.p variants={STAGGER_CHILD} className="mt-6 text-lg text-stone-600 max-w-lg leading-relaxed">
+          <EditableText table="site_settings" field="hero_description" as={StaggerP} className="mt-6 text-lg text-stone-600 max-w-lg leading-relaxed">
             {settings?.hero_description ||
               "A consultation-led process built around anatomy, symbolism and long term aesthetics."}
-          </motion.p>
+          </EditableText>
           <motion.div variants={STAGGER_CHILD} className="mt-8 flex flex-wrap items-center gap-3">
             <Link
               href="/contact"
@@ -107,26 +143,33 @@ export function PageContent({ settings, artists, categories, studio, reviews, vi
           className="relative h-[420px] md:h-[560px] rounded-[2.5rem] overflow-hidden shadow-2xl"
         >
           {settings?.hero_video ? (
-            <video
-              src={settings.hero_video}
-              poster={settings?.hero_image || pickLocal(0)}
-              autoPlay
-              muted
-              loop
-              playsInline
-              className="absolute inset-0 w-full h-full object-cover"
-            />
+            <EditableImage table="site_settings" field="hero_video">
+              <video
+                src={settings.hero_video}
+                poster={settings?.hero_image || pickLocal(0)}
+                autoPlay
+                muted
+                loop
+                playsInline
+                className="absolute inset-0 w-full h-full object-cover"
+              />
+            </EditableImage>
           ) : (
-            <Image
-              src={settings?.hero_image || pickLocal(0)}
-              alt="Featured tattoo"
-              fill
-              className="object-cover"
-              priority
-              sizes="(min-width: 768px) 50vw, 100vw"
-            />
+            <EditableImage table="site_settings" field="hero_image">
+              <Image
+                src={settings?.hero_image || pickLocal(0)}
+                alt="Featured tattoo"
+                fill
+                className="object-cover"
+                priority
+                sizes="(min-width: 768px) 50vw, 100vw"
+              />
+            </EditableImage>
           )}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent mix-blend-overlay" />
+          {/* Decorative sheet, stacked on top of the media. It would otherwise
+              take the hover that reveals the Replace control, so in edit mode it
+              stops answering the pointer. */}
+          <div className={`absolute inset-0 bg-gradient-to-t from-black/40 to-transparent mix-blend-overlay${editing ? " pointer-events-none" : ""}`} />
         </motion.div>
       </section>
 
@@ -138,27 +181,21 @@ export function PageContent({ settings, artists, categories, studio, reviews, vi
         >
           A place where we create your story
         </motion.h2>
-        {(() => {
-          const items: { id: string; src: string; alt: string }[] = studio.length > 0
-            ? studio.map((s: any) => ({ id: s.id, src: s.photo, alt: s.caption || "studio" }))
-            : [
-                { id: "f-studio", src: LOCAL_STUDIO, alt: "Inside Zenspace" },
-                ...LOCAL_TATTOOS.slice(0, 4).map((src, i) => ({ id: `f-${i}`, src, alt: "Tattoo" })),
-              ];
-          return (
-            <Marquee durationSec={60}>
-              {items.map((s) => (
-                <div
-                  key={s.id}
-                  className="relative w-[320px] aspect-[4/5] rounded-[2rem] overflow-hidden shadow-lg shrink-0"
-                >
-                  <Image src={s.src} alt={s.alt} fill className="object-cover" sizes="320px" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 hover:opacity-100 transition-opacity duration-500" />
-                </div>
-              ))}
-            </Marquee>
-          );
-        })()}
+        <Marquee durationSec={60}>
+          <EditableCollection
+            table="studio_photos"
+            items={studio}
+            // photo is NOT NULL, so a new row cannot start empty. It starts on
+            // the bundled studio shot and the admin swaps it with Replace.
+            newItem={{ photo: LOCAL_STUDIO }}
+            addLabel="Add studio photo"
+            itemLabel="photo"
+          >
+            {(s: any) => <StudioPhotoCard id={s.id} src={s.photo} alt={s.caption || "studio"} />}
+          </EditableCollection>
+          {studio.length === 0 &&
+            FALLBACK_STUDIO.map((s) => <StudioPhotoCard key={s.id} src={s.src} alt={s.alt} />)}
+        </Marquee>
       </section>
 
       {/* Short-form videos */}
@@ -170,7 +207,14 @@ export function PageContent({ settings, artists, categories, studio, reviews, vi
           Watch us at work
         </motion.h2>
         {!videos || videos.length === 0 ? (
-          <div className="flex justify-center px-6"><VideoPlaceholderCard /></div>
+          <>
+            <div className="flex justify-center px-6"><VideoPlaceholderCard /></div>
+            {/* The placeholder is bundled markup, not a row, so there is nothing
+                here for EditableCollection to hang an Add button off. And video
+                is NOT NULL with no stand-in clip to point a new row at, so the
+                first one has to come from an upload. */}
+            <AddFirstVideo />
+          </>
         ) : (
           <VideoCarousel videos={videos as any} />
         )}
@@ -224,13 +268,15 @@ export function PageContent({ settings, artists, categories, studio, reviews, vi
             </div>
 
             <div className="relative mx-auto mt-6 mb-8 w-[78%] aspect-square rounded-full overflow-hidden ring-1 ring-pink-200/70 shadow-md bg-pink-100">
-              <Image
-                src={settings?.home_piercing_kids_image || "/assets/photos/tattoo-7.jpeg"}
-                alt="Piercing for children"
-                fill
-                className="object-cover"
-                sizes="(min-width: 768px) 30vw, 80vw"
-              />
+              <EditableImage table="site_settings" field="home_piercing_kids_image">
+                <Image
+                  src={settings?.home_piercing_kids_image || "/assets/photos/tattoo-7.jpeg"}
+                  alt="Piercing for children"
+                  fill
+                  className="object-cover"
+                  sizes="(min-width: 768px) 30vw, 80vw"
+                />
+              </EditableImage>
             </div>
 
             <ul className="grid grid-cols-3 gap-2 bg-white/90 rounded-2xl p-4 border border-pink-100">
@@ -280,13 +326,15 @@ export function PageContent({ settings, artists, categories, studio, reviews, vi
             </div>
 
             <div className="relative mx-auto mt-6 mb-8 w-[78%] aspect-square rounded-full overflow-hidden ring-1 ring-violet-200/70 shadow-md bg-violet-100">
-              <Image
-                src={settings?.home_piercing_adults_image || "/assets/photos/tattoo-4.jpeg"}
-                alt="Piercing for adults"
-                fill
-                className="object-cover"
-                sizes="(min-width: 768px) 30vw, 80vw"
-              />
+              <EditableImage table="site_settings" field="home_piercing_adults_image">
+                <Image
+                  src={settings?.home_piercing_adults_image || "/assets/photos/tattoo-4.jpeg"}
+                  alt="Piercing for adults"
+                  fill
+                  className="object-cover"
+                  sizes="(min-width: 768px) 30vw, 80vw"
+                />
+              </EditableImage>
             </div>
 
             <ul className="grid grid-cols-3 gap-2 bg-white/90 rounded-2xl p-4 border border-violet-100">
@@ -344,31 +392,22 @@ export function PageContent({ settings, artists, categories, studio, reviews, vi
           variants={STAGGER_CONTAINER} initial="hidden" whileInView="show" viewport={{ once: true }}
           className="grid sm:grid-cols-2 md:grid-cols-3 gap-8 md:gap-10"
         >
-          {displayedArtists.map((a: any, i: number) => {
-            const href = a.slug ? `/our-artist/${a.slug}` : (a.portfolio_url || "/our-artist");
-            return (
-              <motion.div key={a.id} variants={STAGGER_CHILD} className="text-center group">
-                <motion.div
-                  whileHover={{ scale: 1.04, rotate: -1 }}
-                  className="relative aspect-[3/4] rounded-[2rem] overflow-hidden mb-6 shadow-xl bg-stone-200"
-                >
-                  <Image
-                    src={a.photo || pickLocal(i)}
-                    alt={a.name}
-                    fill
-                    className="object-cover transition-transform duration-700 group-hover:scale-110"
-                    sizes="(min-width: 768px) 33vw, 100vw"
-                  />
-                  <div className="absolute inset-0 bg-stone-900/10 group-hover:bg-transparent transition-colors duration-500" />
-                </motion.div>
-                <h3 className="font-serif text-2xl group-hover:premium-gradient-text transition-all duration-300">{a.name}</h3>
-                {a.role && <p className="text-sm text-stone-500 mb-4 font-medium uppercase tracking-widest mt-1">{a.role}</p>}
-                <Link href={href} prefetch className="inline-block px-6 py-2.5 rounded-full border border-stone-300 text-sm hover:bg-stone-900 hover:border-stone-900 hover:text-stone-50 transition-all duration-300">
-                  Portfolio
-                </Link>
-              </motion.div>
-            );
-          })}
+          <EditableCollection
+            table="artists"
+            items={realArtists}
+            // name is required and doubles as the unique slug, so the count in
+            // it keeps a second add from colliding with the first.
+            newItem={{ name: `New artist ${realArtists.length + 1}` }}
+            addLabel="Add artist"
+            itemLabel="artist"
+          >
+            {(a: any, i: number) => <ArtistCard a={a} i={i} rowId={a.id} />}
+          </EditableCollection>
+          {/* The guest placeholders keep the section reading as a team. They are
+              not rows, so they render exactly as they do for a visitor. */}
+          {guestArtists.map((a: any, i: number) => (
+            <ArtistCard key={a.id} a={a} i={realArtists.length + i} />
+          ))}
         </motion.div>
       </section>
 
@@ -377,30 +416,50 @@ export function PageContent({ settings, artists, categories, studio, reviews, vi
       <section className="py-20 bg-stone-100/50 my-10 backdrop-blur-sm border-y border-stone-200/50">
         <div className="max-w-7xl mx-auto px-6">
           <h2 className="font-serif text-3xl md:text-4xl mb-12 text-center">Our Categories</h2>
-          {categories.length === 0 ? (
+          {/* In edit mode the grid stands in for the empty-state line, so there
+              is somewhere to add the first category from. */}
+          {categories.length === 0 && !editing ? (
             <p className="text-center text-stone-500 italic">Categories coming soon.</p>
           ) : (
             <div className="flex flex-wrap justify-center gap-5 md:gap-6">
-              {categories.map((c: any, i: number) => (
-                <Link
-                  key={c.id}
-                  href={c.slug ? `/category/${c.slug}` : "/category"}
-                  prefetch
-                  className="group relative block w-full sm:w-[280px] md:w-[300px] aspect-square rounded-[1.75rem] overflow-hidden shadow-md hover:shadow-2xl transition-shadow duration-300 bg-stone-300"
-                >
-                  <Image
-                    src={c.photo || pickLocal(i + 2)}
-                    alt={c.name}
-                    fill
-                    className="object-cover transition-transform duration-700 group-hover:scale-105"
-                    sizes="(min-width: 768px) 300px, 100vw"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-stone-900/85 via-stone-900/30 to-transparent" />
-                  <span className="absolute bottom-5 left-5 right-5 text-stone-50 font-serif text-xl md:text-2xl">
-                    {c.name}
-                  </span>
-                </Link>
-              ))}
+              <EditableCollection
+                table="categories"
+                items={categories}
+                // name is required and doubles as the unique slug, hence the count.
+                newItem={{ name: `New category ${categories.length + 1}` }}
+                addLabel="Add category"
+                itemLabel="category"
+              >
+                {(c: any, i: number) => (
+                  <Link
+                    href={c.slug ? `/category/${c.slug}` : "/category"}
+                    prefetch
+                    className="group relative block w-full sm:w-[280px] md:w-[300px] aspect-square rounded-[1.75rem] overflow-hidden shadow-md hover:shadow-2xl transition-shadow duration-300 bg-stone-300"
+                  >
+                    <EditableImage table="categories" field="photo" id={c.id}>
+                      <Image
+                        src={c.photo || pickLocal(i + 2)}
+                        alt={c.name}
+                        fill
+                        className="object-cover transition-transform duration-700 group-hover:scale-105"
+                        sizes="(min-width: 768px) 300px, 100vw"
+                      />
+                    </EditableImage>
+                    {/* Decorative, and stacked over the photo: in edit mode it
+                        has to let the hover through to the image controls. */}
+                    <div className={`absolute inset-0 bg-gradient-to-t from-stone-900/85 via-stone-900/30 to-transparent${editing ? " pointer-events-none" : ""}`} />
+                    <EditableText
+                      table="categories"
+                      field="name"
+                      id={c.id}
+                      as="span"
+                      className="absolute bottom-5 left-5 right-5 text-stone-50 font-serif text-xl md:text-2xl"
+                    >
+                      {c.name}
+                    </EditableText>
+                  </Link>
+                )}
+              </EditableCollection>
             </div>
           )}
           {categories.length > 0 && (
@@ -422,9 +481,17 @@ export function PageContent({ settings, artists, categories, studio, reviews, vi
         <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }} className="max-w-7xl mx-auto px-6">
           <h2 className="font-serif text-3xl md:text-4xl mb-4 text-center">
             Rated highly by{" "}
-            <span className="premium-gradient-text font-bold">
+            {/* The "+" is decoration, so the editor is handed the bare number
+                and that is what goes back into the Int column. */}
+            <EditableText
+              table="site_settings"
+              field="google_review_count"
+              as="span"
+              className="premium-gradient-text font-bold"
+              value={settings?.google_review_count ? String(settings.google_review_count) : "250"}
+            >
               {settings?.google_review_count ? `${settings.google_review_count}+` : "250+"}
-            </span>{" "}
+            </EditableText>{" "}
             clients
           </h2>
           {settings?.instagram && (
@@ -452,17 +519,37 @@ export function PageContent({ settings, artists, categories, studio, reviews, vi
             switch to the marquee carousel so the section doesn't look stretched. */}
         {displayedReviews.length <= 2 ? (
           <div className="max-w-3xl mx-auto px-6 grid sm:grid-cols-2 gap-4">
-            {displayedReviews.map((r: any, i: number) => (
-              <ReviewCard key={r.id} r={r} fallback={pickLocal(i + 4)} compact />
+            <EditableCollection
+              table="reviews"
+              items={realReviews}
+              // client_name is the one column the row cannot be created without.
+              newItem={{ client_name: "New client" }}
+              addLabel="Add review"
+              itemLabel="review"
+            >
+              {(r: any, i: number) => <ReviewCard rowId={r.id} r={r} fallback={pickLocal(i + 4)} compact />}
+            </EditableCollection>
+            {placeholderReviews.map((r: any, i: number) => (
+              <ReviewCard key={r.id} r={r} fallback={pickLocal(realReviews.length + i + 4)} compact />
             ))}
           </div>
         ) : (
+          // Past two reviews the list is all real rows — the placeholders only
+          // ever pad up to two — so there is nothing inert to render here.
           <Marquee durationSec={70}>
-            {displayedReviews.map((r: any, i: number) => (
-              <div key={r.id} className="w-[380px] shrink-0">
-                <ReviewCard r={r} fallback={pickLocal(i + 4)} />
-              </div>
-            ))}
+            <EditableCollection
+              table="reviews"
+              items={realReviews}
+              newItem={{ client_name: "New client" }}
+              addLabel="Add review"
+              itemLabel="review"
+            >
+              {(r: any, i: number) => (
+                <div className="w-[380px] shrink-0">
+                  <ReviewCard rowId={r.id} r={r} fallback={pickLocal(i + 4)} />
+                </div>
+              )}
+            </EditableCollection>
           </Marquee>
         )}
       </section>
@@ -549,12 +636,12 @@ export function PageContent({ settings, artists, categories, studio, reviews, vi
           className="bg-stone-900 text-stone-50 p-16 md:p-24 rounded-[3rem] shadow-2xl relative overflow-hidden"
         >
           <div className="absolute inset-0 bg-[url('/assets/bg.png')] opacity-10 mix-blend-overlay" />
-          <h2 className="relative z-10 font-serif text-4xl md:text-6xl tracking-tight mb-8">
+          <EditableText table="site_settings" field="cta_title" as="h2" className="relative z-10 font-serif text-4xl md:text-6xl tracking-tight mb-8">
             {settings?.cta_title || "Where your story becomes timeless art"}
-          </h2>
-          <p className="relative z-10 text-xl text-stone-300 max-w-2xl mx-auto mb-12">
+          </EditableText>
+          <EditableText table="site_settings" field="cta_subtitle" as="p" className="relative z-10 text-xl text-stone-300 max-w-2xl mx-auto mb-12">
             {settings?.cta_subtitle || "Custom tattoos crafted with passion, precision and profound meaning."}
-          </p>
+          </EditableText>
           <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="relative z-10 inline-block">
             <Link
               href="/contact"
@@ -569,37 +656,263 @@ export function PageContent({ settings, artists, categories, studio, reviews, vi
   );
 }
 
-function ReviewCard({ r, fallback, compact = false }: { r: any; fallback: string; compact?: boolean }) {
+function ReviewCard({ r, fallback, compact = false, rowId }: { r: any; fallback: string; compact?: boolean; rowId?: string }) {
   return (
     <div className="bg-white/80 backdrop-blur-xl rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-stone-100 h-full overflow-hidden flex flex-col">
       <div className={`relative w-full ${compact ? "aspect-[3/4]" : "aspect-[4/5]"} bg-stone-200`}>
         {r.video ? (
-          <video
-            src={r.video}
-            poster={r.photo || undefined}
-            autoPlay
-            muted
-            loop
-            playsInline
-            className="absolute inset-0 w-full h-full object-cover"
-          />
+          <RowImage table="reviews" field="video" id={rowId}>
+            <video
+              src={r.video}
+              poster={r.photo || undefined}
+              autoPlay
+              muted
+              loop
+              playsInline
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+          </RowImage>
         ) : r.photo ? (
-          <Image src={r.photo} alt={r.client_name} fill className="object-cover" sizes="(min-width: 768px) 380px, 100vw" />
+          <RowImage table="reviews" field="photo" id={rowId}>
+            <Image src={r.photo} alt={r.client_name} fill className="object-cover" sizes="(min-width: 768px) 380px, 100vw" />
+          </RowImage>
         ) : (
-          <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-stone-100 to-stone-200 text-stone-400">
-            <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor" aria-hidden><path d="M8 5v14l11-7L8 5z"/></svg>
-          </div>
+          // Nothing to take away yet, so the empty slot only offers Replace.
+          <RowImage table="reviews" field="photo" id={rowId} removable={false}>
+            <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-stone-100 to-stone-200 text-stone-400">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor" aria-hidden><path d="M8 5v14l11-7L8 5z"/></svg>
+            </div>
+          </RowImage>
         )}
       </div>
       <div className="p-7 flex flex-col flex-1">
-        <p className="font-serif text-xl text-stone-900">{r.client_name}</p>
-        <div className="flex gap-1 mt-1 mb-4">
-          {Array.from({ length: r.rating || 5 }).map((_, i) => (
-            <Star key={i} size={15} className="fill-stone-700 text-stone-700" />
-          ))}
-        </div>
-        <p className="text-stone-600 leading-relaxed italic line-clamp-5">"{r.review}"</p>
+        <RowText table="reviews" field="client_name" id={rowId} as="p" className="font-serif text-xl text-stone-900">
+          {r.client_name}
+        </RowText>
+        <RowStars id={rowId} rating={r.rating || 5} />
+        {/* The quotes belong to the layout, not to the column, so the editor is
+            handed the review on its own. */}
+        <RowText
+          table="reviews"
+          field="review"
+          id={rowId}
+          value={r.review || ""}
+          as="p"
+          className="text-stone-600 leading-relaxed italic line-clamp-5"
+        >
+          "{r.review}"
+        </RowText>
       </div>
+    </div>
+  );
+}
+
+function ArtistCard({ a, i, rowId }: { a: any; i: number; rowId?: string }) {
+  const editing = useEditMode();
+  const href = a.slug ? `/our-artist/${a.slug}` : (a.portfolio_url || "/our-artist");
+  return (
+    <motion.div variants={STAGGER_CHILD} className="text-center group">
+      {/* The tint sits over the photo, so the whole media block is the hover
+          target rather than the <img> underneath it. */}
+      <RowImage table="artists" field="photo" id={rowId}>
+        <motion.div
+          whileHover={{ scale: 1.04, rotate: -1 }}
+          className="relative aspect-[3/4] rounded-[2rem] overflow-hidden mb-6 shadow-xl bg-stone-200"
+        >
+          <Image
+            src={a.photo || pickLocal(i)}
+            alt={a.name}
+            fill
+            className="object-cover transition-transform duration-700 group-hover:scale-110"
+            sizes="(min-width: 768px) 33vw, 100vw"
+          />
+          <div className="absolute inset-0 bg-stone-900/10 group-hover:bg-transparent transition-colors duration-500" />
+        </motion.div>
+      </RowImage>
+      <RowText table="artists" field="name" id={rowId} as="h3" className="font-serif text-2xl group-hover:premium-gradient-text transition-all duration-300">
+        {a.name}
+      </RowText>
+      {/* An artist with no role renders no line at all, which leaves nowhere to
+          type one, so edit mode keeps the empty line on screen. */}
+      {(a.role || (editing && rowId)) && (
+        <RowText table="artists" field="role" id={rowId} as="p" className="text-sm text-stone-500 mb-4 font-medium uppercase tracking-widest mt-1">
+          {a.role}
+        </RowText>
+      )}
+      <Link href={href} prefetch className="inline-block px-6 py-2.5 rounded-full border border-stone-300 text-sm hover:bg-stone-900 hover:border-stone-900 hover:text-stone-50 transition-all duration-300">
+        Portfolio
+      </Link>
+    </motion.div>
+  );
+}
+
+function StudioPhotoCard({ id, src, alt }: { id?: string; src: string; alt: string }) {
+  const editing = useEditMode();
+  return (
+    <div className="relative w-[320px] aspect-[4/5] rounded-[2rem] overflow-hidden shadow-lg shrink-0">
+      {/* photo is NOT NULL: removing it would leave a hole in the strip. */}
+      <RowImage table="studio_photos" field="photo" id={id} removable={false}>
+        <Image src={src} alt={alt} fill className="object-cover" sizes="320px" />
+      </RowImage>
+      {/* Decorative sheet over the photo, muted in edit mode so the hover
+          reaches the image controls. */}
+      <div className={`absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 hover:opacity-100 transition-opacity duration-500${editing ? " pointer-events-none" : ""}`} />
+    </div>
+  );
+}
+
+/**
+ * The artists grid, the reviews section and the studio strip all pad themselves
+ * with hardcoded placeholders. Those are not database rows, and an editing
+ * handle pointing at their synthetic ids would write to nothing, so the two
+ * wrappers below fall back to the plain markup whenever there is no id.
+ */
+function RowText({
+  id,
+  table,
+  field,
+  value,
+  as: As = "span",
+  className,
+  children,
+}: {
+  id?: string;
+  table: string;
+  field: string;
+  value?: string;
+  as?: ElementType;
+  className?: string;
+  children?: ReactNode;
+}) {
+  if (!id) return <As className={className}>{children}</As>;
+  return (
+    <EditableText table={table} field={field} id={id} value={value} as={As} className={className}>
+      {children}
+    </EditableText>
+  );
+}
+
+function RowImage({
+  id,
+  table,
+  field,
+  removable,
+  children,
+}: {
+  id?: string;
+  table: string;
+  field?: string;
+  removable?: boolean;
+  children: ReactNode;
+}) {
+  if (!id) return <>{children}</>;
+  return (
+    <EditableImage table={table} field={field} id={id} removable={removable}>
+      {children}
+    </EditableImage>
+  );
+}
+
+/**
+ * reviews.rating is an Int drawn as a row of stars, so there is no text node for
+ * EditableText to take over. Edit mode swaps the row for five buttons instead;
+ * everyone else gets exactly the stars the review earned and no more.
+ */
+function RowStars({ id, rating }: { id?: string; rating: number }) {
+  const editing = useEditMode();
+  if (!editing || !id) {
+    return (
+      <div className="flex gap-1 mt-1 mb-4">
+        {Array.from({ length: rating }).map((_, i) => (
+          <Star key={i} size={15} className="fill-stone-700 text-stone-700" />
+        ))}
+      </div>
+    );
+  }
+  return <RowStarsLive id={id} rating={rating} />;
+}
+
+function RowStarsLive({ id, rating }: { id: string; rating: number }) {
+  const patch = useRowPatch();
+  return (
+    <div className="flex gap-1 mt-1 mb-4" role="radiogroup" aria-label="Star rating (1 to 5)">
+      {Array.from({ length: 5 }).map((_, i) => (
+        <button
+          key={i}
+          type="button"
+          role="radio"
+          aria-checked={i + 1 === rating}
+          aria-label={`${i + 1} star${i === 0 ? "" : "s"}`}
+          onClick={() =>
+            void patch({
+              table: "reviews",
+              id,
+              // A number, not a string: the API coerces google_review_count but
+              // leaves reviews.rating alone, and Prisma rejects "4" for an Int.
+              values: { rating: i + 1 },
+              previous: { rating },
+              undoMessage: "Star rating updated",
+            })
+          }
+          className="rounded-[2px] transition-shadow hover:shadow-[0_0_0_2px_rgba(120,113,108,0.35)]"
+        >
+          <Star
+            size={15}
+            className={i < rating ? "fill-stone-700 text-stone-700" : "text-stone-300"}
+          />
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/**
+ * The "Watch us at work" empty state. Renders nothing at all for a visitor, so
+ * the placeholder card ships byte for byte as it always has.
+ */
+function AddFirstVideo() {
+  const editing = useEditMode();
+  if (!editing) return null;
+  return <AddFirstVideoLive />;
+}
+
+function AddFirstVideoLive() {
+  const { create } = useRowMutations();
+  const edit = useEditContext();
+  const input = useRef<HTMLInputElement | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  // Same order as everywhere else: the file goes browser -> Supabase first, and
+  // the row is only created once there is a URL to put in its NOT NULL column.
+  const onFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = ""; // let the same file be picked again after a failure
+    if (!file) return;
+    setBusy(true);
+    const settle = edit?.beginSave();
+    try {
+      const url = await uploadMediaLazy(file);
+      settle?.();
+      await create("short_videos", { video: url, sort_order: 0 });
+    } catch (err) {
+      settle?.(err instanceof Error ? err.message : "Upload failed");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="flex justify-center mt-6 px-6">
+      <input ref={input} type="file" accept="video/*" onChange={onFile} className="hidden" />
+      <button
+        type="button"
+        disabled={busy}
+        onClick={() => input.current?.click()}
+        className="inline-flex items-center gap-2 px-6 py-3 rounded-full border-2 border-dashed border-stone-300 text-sm font-medium text-stone-500 hover:border-stone-500 hover:text-stone-700 transition-colors"
+      >
+        {busy ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
+        {busy ? "Uploading…" : "Add the first video"}
+      </button>
     </div>
   );
 }
