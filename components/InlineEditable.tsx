@@ -78,6 +78,18 @@ export type InlineEditableProps = {
   onCommit: (next: string) => void | Promise<boolean | void>;
 };
 
+/**
+ * Reads what the admin can actually see in the element.
+ *
+ * textContent joins the child nodes with no separator, so the <div> or <br> a
+ * contentEditable inserts on Enter leaves no trace and the line break is lost
+ * on save. innerText honours the rendered line boxes. Single-line fields keep
+ * textContent: they cannot hold a break anyway.
+ */
+function readText(el: HTMLElement, multiline?: boolean): string {
+  return (multiline ? el.innerText : el.textContent) ?? "";
+}
+
 export function InlineEditable({
   as: As = "span",
   className,
@@ -105,9 +117,9 @@ export function InlineEditable({
     const el = ref.current;
     if (!el || focused) return;
     committed.current = value;
-    if (el.textContent !== value) el.textContent = value;
+    if (readText(el, multiline) !== value) el.textContent = value;
     setLength(value.length);
-  }, [value, focused]);
+  }, [value, focused, multiline]);
 
   const onBeforeInput = useCallback(
     (e: FormEvent<HTMLElement>) => {
@@ -117,12 +129,12 @@ export function InlineEditable({
       const native = e.nativeEvent as InputEvent;
       const inserted = native.data ?? "";
       if (!inserted) return; // deletions and IME composition starts are always fine
-      const current = el.textContent?.length ?? 0;
+      const current = readText(el, multiline).length;
       // Refuse the keystroke rather than trimming afterwards, so the counter can
       // never show a number above the cap.
       if (current - selectionLength(el) + inserted.length > max) e.preventDefault();
     },
-    [max]
+    [max, multiline]
   );
 
   const onPaste = useCallback(
@@ -133,12 +145,12 @@ export function InlineEditable({
       let text = e.clipboardData.getData("text/plain");
       if (!multiline) text = text.replace(/\s*\n+\s*/g, " ");
       if (max > 0) {
-        const room = max - (el.textContent?.length ?? 0) + selectionLength(el);
+        const room = max - readText(el, multiline).length + selectionLength(el);
         if (room <= 0) return;
         text = text.slice(0, room);
       }
       insertAtCaret(text);
-      setLength((el.textContent ?? "").length);
+      setLength(readText(el, multiline).length);
     },
     [max, multiline]
   );
@@ -146,7 +158,7 @@ export function InlineEditable({
   const onInput = useCallback(() => {
     const el = ref.current;
     if (!el) return;
-    let next = el.textContent ?? "";
+    let next = readText(el, multiline);
     // Backstop for the input types beforeinput cannot refuse (an IME commit, a
     // drag-and-drop of text). The cap is hard, so trim and move on.
     if (max > 0 && next.length > max) {
@@ -160,12 +172,12 @@ export function InlineEditable({
       sel?.addRange(range);
     }
     setLength(next.length);
-  }, [max]);
+  }, [max, multiline]);
 
   const commit = useCallback(async () => {
     const el = ref.current;
     if (!el) return;
-    const next = el.textContent ?? "";
+    const next = readText(el, multiline);
     const previous = committed.current;
     if (next === previous) return;
     committed.current = next;
@@ -177,7 +189,7 @@ export function InlineEditable({
       if (ref.current) ref.current.textContent = previous;
       setLength(previous.length);
     }
-  }, [onCommit]);
+  }, [onCommit, multiline]);
 
   const onKeyDown = useCallback(
     (e: ReactKeyboardEvent<HTMLElement>) => {

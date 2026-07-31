@@ -59,6 +59,20 @@ function selectionLength(el: HTMLElement): number {
   return el.contains(range.commonAncestorContainer) ? sel.toString().length : 0;
 }
 
+/**
+ * Reads what the admin can actually see in the element.
+ *
+ * textContent joins the child nodes with no separator, so the <div> or <br>
+ * that a contentEditable inserts when Enter is pressed leaves no trace and the
+ * line break is silently dropped on save. innerText honours the rendered line
+ * boxes, which is what a multiline field is meant to store. Single-line fields
+ * keep textContent: they cannot hold a break anyway, and innerText forces a
+ * layout on every keystroke.
+ */
+function readText(el: HTMLElement, multiline?: boolean): string {
+  return (multiline ? el.innerText : el.textContent) ?? "";
+}
+
 export default function EditableTextLive({
   table,
   field,
@@ -86,9 +100,9 @@ export default function EditableTextLive({
   useEffect(() => {
     const el = ref.current;
     if (!el || focused) return;
-    if (el.textContent !== saved) el.textContent = saved;
+    if (readText(el, multiline) !== saved) el.textContent = saved;
     setLength(saved.length);
-  }, [saved, focused]);
+  }, [saved, focused, multiline]);
 
   const onBeforeInput = useCallback(
     (e: FormEvent<HTMLElement>) => {
@@ -98,12 +112,12 @@ export default function EditableTextLive({
       const native = e.nativeEvent as InputEvent;
       const inserted = native.data ?? "";
       if (!inserted) return; // deletions and IME composition starts are always fine
-      const current = el.textContent?.length ?? 0;
+      const current = readText(el, multiline).length;
       // Refuse the keystroke outright rather than truncating afterwards, so the
       // counter can never show a number above the cap.
       if (current - selectionLength(el) + inserted.length > max) e.preventDefault();
     },
-    [max]
+    [max, multiline]
   );
 
   const onPaste = useCallback(
@@ -114,12 +128,12 @@ export default function EditableTextLive({
       let text = e.clipboardData.getData("text/plain");
       if (!multiline) text = text.replace(/\s*\n+\s*/g, " ");
       if (max > 0) {
-        const room = max - (el.textContent?.length ?? 0) + selectionLength(el);
+        const room = max - readText(el, multiline).length + selectionLength(el);
         if (room <= 0) return;
         text = text.slice(0, room);
       }
       insertAtCaret(text);
-      const next = el.textContent ?? "";
+      const next = readText(el, multiline);
       setLength(next.length);
       edit(next);
     },
@@ -129,7 +143,7 @@ export default function EditableTextLive({
   const onInput = useCallback(() => {
     const el = ref.current;
     if (!el) return;
-    let next = el.textContent ?? "";
+    let next = readText(el, multiline);
     // Backstop for the input types beforeinput can't refuse (an IME commit, a
     // drag-and-drop of text). The cap is hard, so trim and move on.
     if (max > 0 && next.length > max) {
@@ -144,7 +158,7 @@ export default function EditableTextLive({
     }
     setLength(next.length);
     edit(next);
-  }, [edit, max]);
+  }, [edit, max, multiline]);
 
   const onKeyDown = useCallback(
     (e: ReactKeyboardEvent<HTMLElement>) => {
@@ -184,7 +198,7 @@ export default function EditableTextLive({
         onFocus={() => setFocused(true)}
         onBlur={() => {
           setFocused(false);
-          flush(ref.current?.textContent ?? "");
+          flush(ref.current ? readText(ref.current, multiline) : "");
         }}
         onInput={onInput}
         onBeforeInput={onBeforeInput}
